@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "KubernetesControlPanel.API": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:55850;http://localhost:55851"
+    }
+  }
+}

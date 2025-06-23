@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-control-panel
+  namespace: k8s-control-panel
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: k8s-control-panel-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "pods/exec", "nodes", "namespaces", "events"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["services", "ingresses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["persistentvolumes", "persistentvolumeclaims"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-control-panel-binding
+subjects:
+- kind: ServiceAccount
+  name: k8s-control-panel
+  namespace: k8s-control-panel
+roleRef:
+  kind: ClusterRole
+  name: k8s-control-panel-role
+  apiGroup: rbac.authorization.k8s.io 

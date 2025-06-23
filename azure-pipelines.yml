@@ -1,0 +1,169 @@
+trigger:
+- main
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  dockerfilePath: 'docker/Dockerfile'
+  imageName: 'k8s-control-panel'
+  imageTag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: 'Build and Test'
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET 8.0'
+      inputs:
+        version: '8.0.x'
+        includePreviewVersions: false
+
+    - task: NodeTool@0
+      displayName: 'Use Node.js'
+      inputs:
+        versionSpec: '18.x'
+
+    - script: |
+        dotnet --version
+        node --version
+        npm --version
+      displayName: 'Display versions'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet packages'
+      inputs:
+        command: 'restore'
+        projects: '$(solution)'
+        feedsToUse: 'select'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build solution'
+      inputs:
+        command: 'build'
+        projects: '$(solution)'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run tests'
+      inputs:
+        command: 'test'
+        projects: '**/*Tests/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage"'
+        publishTestResults: true
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'src/Backend/KubernetesControlPanel.API/KubernetesControlPanel.API.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/api'
+        zipAfterPublish: false
+
+    - script: |
+        cd src/Frontend
+        npm install
+        npm run build
+      displayName: 'Build Frontend'
+      workingDirectory: '$(Build.SourcesDirectory)'
+
+    - task: CopyFiles@2
+      displayName: 'Copy Frontend build to API'
+      inputs:
+        sourceFolder: 'src/Frontend/build'
+        contents: '**'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/api/wwwroot'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish build artifacts'
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: 'drop'
+
+- stage: Docker
+  displayName: 'Build Docker Image'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: Docker
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: Docker@2
+      displayName: 'Build Docker image'
+      inputs:
+        containerRegistry: 'your-acr-connection'
+        repository: '$(imageName)'
+        command: 'buildAndPush'
+        Dockerfile: '$(dockerfilePath)'
+        tags: |
+          $(imageTag)
+          latest
+        buildContext: '$(Build.SourcesDirectory)'
+
+- stage: Deploy
+  displayName: 'Deploy to Kubernetes'
+  dependsOn: Docker
+  condition: succeeded()
+  jobs:
+  - job: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: KubernetesManifest@0
+      displayName: 'Create namespace'
+      inputs:
+        action: 'deploy'
+        kubernetesServiceConnection: 'your-k8s-connection'
+        namespace: 'k8s-control-panel'
+        manifests: |
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: k8s-control-panel
+
+    - task: KubernetesManifest@0
+      displayName: 'Deploy RBAC'
+      inputs:
+        action: 'deploy'
+        kubernetesServiceConnection: 'your-k8s-connection'
+        namespace: 'k8s-control-panel'
+        manifests: 'k8s/rbac.yaml'
+
+    - task: KubernetesManifest@0
+      displayName: 'Deploy application'
+      inputs:
+        action: 'deploy'
+        kubernetesServiceConnection: 'your-k8s-connection'
+        namespace: 'k8s-control-panel'
+        manifests: |
+          k8s/deployment.yaml
+          k8s/service.yaml
+          k8s/ingress.yaml
+        containers: 'your-acr.azurecr.io/$(imageName):$(imageTag)'
+
+    - task: KubernetesManifest@0
+      displayName: 'Verify deployment'
+      inputs:
+        action: 'deploy'
+        kubernetesServiceConnection: 'your-k8s-connection'
+        namespace: 'k8s-control-panel'
+        manifests: |
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: k8s-control-panel-verification
+          spec:
+            containers:
+            - name: verification
+              image: curlimages/curl
+              command: ['curl', '-f', 'http://k8s-control-panel-service:80/health']
+            restartPolicy: Never 

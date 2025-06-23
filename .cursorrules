@@ -1,0 +1,151 @@
+# AI Assistant Rules for Kubernetes Control Panel Project
+
+## Project Overview
+- Building a Kubernetes control panel for monitoring cluster health and pod details
+- Deployed as a pod inside the Kubernetes cluster
+- Azure DevOps deployment pipeline
+- User-friendly web interface
+
+## Technology Stack
+- **Frontend**: React with TypeScript, Material-UI or Ant Design for UI components
+- **Backend**: ASP.NET Core Web API with C#
+- **Database**: SQLite for local storage (optional) or in-memory caching
+- **Kubernetes Client**: Official .NET Kubernetes client library
+- **Authentication**: Service account token-based authentication
+- **Real-time Updates**: SignalR for live cluster status updates
+
+## Code Organization Rules:
+1. **Frontend Structure**:
+   - Use functional components with hooks
+   - Implement proper TypeScript interfaces for all data models
+   - Organize components by feature (dashboard, pods, nodes, etc.)
+   - Use proper state management (Context API or Redux if needed)
+
+2. **Backend Structure**:
+   - Follow clean architecture principles
+   - Separate concerns: Controllers, Services, Models, DTOs
+   - Use dependency injection for all services
+   - Implement proper error handling and logging
+
+3. **Kubernetes Integration**:
+   - Use official Kubernetes client library
+   - Implement proper RBAC for service account
+   - Handle connection errors gracefully
+   - Cache cluster data appropriately
+
+## Configuration Management:
+- Use strongly-typed configuration classes
+- Environment-specific settings for different deployment stages
+- Kubernetes service account configuration
+- API endpoints configuration
+
+## Security Considerations:
+- Implement proper RBAC for the service account
+- Secure API endpoints
+- Validate all user inputs
+- Implement proper CORS policies
+- Use HTTPS in production
+
+## Performance Optimization:
+- Implement caching for cluster data
+- Use pagination for large datasets
+- Optimize API calls to Kubernetes API
+- Implement proper error boundaries in React
+
+## User Experience:
+- Responsive design for different screen sizes
+- Loading states and error handling
+- Real-time updates for cluster status
+- Intuitive navigation and data visualization
+- Color-coded status indicators
+
+## Monitoring and Logging:
+- Implement structured logging
+- Health check endpoints
+- Metrics collection
+- Error tracking and reporting
+
+## Testing Strategy:
+- Unit tests for services and utilities
+- Integration tests for API endpoints
+- Component tests for React components
+- End-to-end tests for critical user flows
+
+## Deployment Considerations:
+- Docker containerization
+- Kubernetes manifests for deployment
+- Azure DevOps pipeline configuration
+- Environment-specific configurations
+- Health checks and readiness probes
+
+## Code Style:
+- Follow C# and TypeScript coding conventions
+- Use meaningful variable and function names
+- Implement proper XML documentation
+- Follow SOLID principles
+- Use async/await patterns consistently
+
+## File Organization:
+```
+KubernetesControlPanel/
+├── src/
+│   ├── Frontend/          # React TypeScript application
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   ├── services/
+│   │   │   ├── types/
+│   │   │   └── utils/
+│   │   └── public/
+│   └── Backend/           # ASP.NET Core Web API
+│       ├── Controllers/
+│       ├── Services/
+│       ├── Models/
+│       ├── DTOs/
+│       └── Configuration/
+├── k8s/                   # Kubernetes manifests
+├── azure-pipelines.yml    # Azure DevOps pipeline
+└── docker/               # Docker configurations
+```
+
+## Specific Features to Implement:
+1. **Dashboard Page**:
+   - Cluster overview with health status
+   - Node count and status
+   - Pod count by namespace
+   - Resource usage metrics
+
+2. **Pods Page**:
+   - List all pods with status
+   - Pod details (logs, events, resources)
+   - Pod actions (restart, delete)
+   - Filtering and search capabilities
+
+3. **Nodes Page**:
+   - Node status and health
+   - Resource allocation
+   - Node details and metrics
+
+4. **Namespaces Page**:
+   - Namespace overview
+   - Resource quotas
+   - Pod distribution
+
+## Error Handling:
+- Implement proper exception handling
+- User-friendly error messages
+- Retry mechanisms for API calls
+- Graceful degradation when services are unavailable
+
+## Documentation:
+- API documentation with Swagger
+- README with setup instructions
+- Deployment guide
+- User manual for the control panel
+
+## Response Format:
+- Provide clear explanations for all suggestions
+- Include code examples with proper syntax highlighting
+- Explain the rationale behind architectural decisions
+- Provide configuration examples when needed
+- Include file paths and complete file contents for new files 

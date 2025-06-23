@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-control-panel
+  namespace: k8s-control-panel
+  labels:
+    app: k8s-control-panel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-control-panel
+  template:
+    metadata:
+      labels:
+        app: k8s-control-panel
+    spec:
+      serviceAccountName: k8s-control-panel
+      containers:
+      - name: k8s-control-panel-api
+        image: k8s-control-panel:latest
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:80;https://+:443"
+        - name: KUBERNETES_SERVICE_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: KUBERNETES_SERVICE_PORT
+          value: "6443"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+      restartPolicy: Always 
