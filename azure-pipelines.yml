@@ -18,22 +18,19 @@ stages:
     pool:
       name: 'Default'
     steps:
-    - task: PowerShell@2
+    - script: |
+        echo "=== Environment Information ==="
+        echo "Agent OS: $(Agent.OS)"
+        echo "Agent Architecture: $(Agent.Architecture)"
+        echo "Working Directory: $(System.DefaultWorkingDirectory)"
+        echo ""
+        echo "=== Tool Versions ==="
+        dotnet --version
+        node --version
+        npm --version
+        docker --version
+        kubectl version --client
       displayName: 'Display Environment Information'
-      inputs:
-        targetType: 'inline'
-        script: |
-          Write-Host "=== Environment Information ==="
-          Write-Host "Agent OS: $(Agent.OS)"
-          Write-Host "Agent Architecture: $(Agent.Architecture)"
-          Write-Host "Working Directory: $(System.DefaultWorkingDirectory)"
-          Write-Host ""
-          Write-Host "=== Tool Versions ==="
-          dotnet --version
-          node --version
-          npm --version
-          docker --version
-          kubectl version --client
 
     - script: 'dotnet restore $(solution)'
       displayName: 'Restore NuGet packages'
@@ -65,7 +62,7 @@ stages:
       name: 'Default'
     steps:
     - script: 'echo "Building Docker image: $(imageName):$(imageTag)"'
-      displayName: 'Build Docker image'
+      displayName: 'Echo build info'
 
     - script: 'docker build -t $(imageName):$(imageTag) -t $(imageName):latest -f $(dockerfilePath) .'
       displayName: 'Build Docker image'
