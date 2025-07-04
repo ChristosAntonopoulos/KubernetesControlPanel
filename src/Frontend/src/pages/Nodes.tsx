@@ -150,8 +150,8 @@ const Nodes: React.FC = () => {
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Conditions
                     </Typography>
-                    <TableContainer component={Paper} variant="outlined" size="small">
-                      <Table>
+                    <TableContainer component={Paper}>
+                      <Table size="small">
                         <TableHead>
                           <TableRow>
                             <TableCell>Type</TableCell>

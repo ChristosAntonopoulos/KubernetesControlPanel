@@ -110,7 +110,7 @@ const Namespaces: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             Namespace Details
           </Typography>
-          <TableContainer component={Paper} variant="outlined">
+          <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
