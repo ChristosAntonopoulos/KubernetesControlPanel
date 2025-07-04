@@ -6,15 +6,17 @@ metadata:
   labels:
     app: k8s-control-panel
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - port: 80
     targetPort: 80
     protocol: TCP
     name: http
+    nodePort: 30080
   - port: 443
     targetPort: 443
     protocol: TCP
     name: https
+    nodePort: 30443
   selector:
     app: k8s-control-panel 

@@ -9,7 +9,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: k8s-control-panel.local
+  - host: ""
     http:
       paths:
       - path: /
@@ -18,4 +18,5 @@ spec:
           service:
             name: k8s-control-panel-service
             port:
-              number: 80 
+              number: 80
+# NOTE: For production, set a specific host and enable TLS for security. 

@@ -2,7 +2,7 @@ trigger:
   - master
 
 variables:
-  solution: '**/*.sln'
+  solution: 'KubernetesControlPanel.sln'
   buildConfiguration: 'Release'
   imageName: 'k8s-control-panel'
   imageTag: '$(Build.BuildId)'
