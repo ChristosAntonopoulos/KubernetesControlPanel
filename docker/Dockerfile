@@ -2,6 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+# Install Node.js for frontend build
+RUN apt-get update && apt-get install -y nodejs npm
+
 # Copy solution and project files
 COPY ["KubernetesControlPanel.sln", "./"]
 COPY ["src/Backend/KubernetesControlPanel.API/KubernetesControlPanel.API.csproj", "src/Backend/KubernetesControlPanel.API/"]
@@ -14,7 +17,12 @@ RUN dotnet restore "src/Backend/KubernetesControlPanel.API/KubernetesControlPane
 # Copy source code
 COPY . .
 
-# Build the application
+# Build frontend
+WORKDIR "/src/src/Frontend"
+RUN npm ci
+RUN npm run build
+
+# Build the backend application
 WORKDIR "/src/src/Backend/KubernetesControlPanel.API"
 RUN dotnet build "KubernetesControlPanel.API.csproj" -c Release -o /app/build
 
@@ -31,6 +39,9 @@ RUN mkdir -p /app/logs
 
 # Copy published application
 COPY --from=publish /app/publish .
+
+# Copy frontend build to wwwroot
+COPY --from=build /src/src/Frontend/build ./wwwroot
 
 # Expose ports
 EXPOSE 80

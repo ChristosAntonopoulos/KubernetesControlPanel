@@ -87,10 +87,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
+// Serve static files (React app)
+app.UseStaticFiles();
+
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ClusterHub>("/hubs/cluster");
+
+// Fallback route for SPA
+app.MapFallbackToFile("index.html");
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));

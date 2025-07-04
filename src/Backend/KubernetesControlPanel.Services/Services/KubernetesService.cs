@@ -428,7 +428,7 @@ public class KubernetesService : IKubernetesService
         };
     }
 
-    private async Task<ResourceUsageSummary> CalculateResourceUsageAsync(List<NodeInfo> nodes, List<PodInfo> pods)
+    private Task<ResourceUsageSummary> CalculateResourceUsageAsync(List<NodeInfo> nodes, List<PodInfo> pods)
     {
         var totalCpu = nodes.Sum(n => ParseCpu(n.Capacity?.Cpu));
         var totalMemory = nodes.Sum(n => ParseMemory(n.Capacity?.Memory));
@@ -436,7 +436,7 @@ public class KubernetesService : IKubernetesService
         var usedCpu = totalCpu * 0.3;
         var usedMemory = totalMemory * 0.4;
 
-        return new ResourceUsageSummary
+        var result = new ResourceUsageSummary
         {
             CpuUsagePercentage = totalCpu > 0 ? (usedCpu / totalCpu) * 100 : 0,
             MemoryUsagePercentage = totalMemory > 0 ? (usedMemory / totalMemory) * 100 : 0,
@@ -445,6 +445,8 @@ public class KubernetesService : IKubernetesService
             UsedCpu = $"{usedCpu:F1}",
             UsedMemory = $"{usedMemory:F0}Mi"
         };
+
+        return Task.FromResult(result);
     }
 
     private double ParseCpu(string? cpuString)
