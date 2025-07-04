@@ -4,9 +4,10 @@ trigger:
 variables:
   solution: '**/*.sln'
   buildConfiguration: 'Release'
-  dockerRegistry: '$(DOCKER_REGISTRY)'
-  imageName: '$(IMAGE_NAME)'
-  kubernetesNamespace: '$(KUBERNETES_NAMESPACE)'
+  imageName: 'k8s-control-panel'
+  imageTag: '$(Build.BuildId)'
+  kubernetesNamespace: 'k8s-control-panel'
+  dockerfilePath: 'docker/Dockerfile'
 
 stages:
 - stage: Build
@@ -15,24 +16,32 @@ stages:
   - job: Build
     displayName: 'Build Application'
     pool:
-      name: 'kubernetes-server-pool'
+      name: 'Default'
     steps:
-    - script: |
-        dotnet --version
-        node --version
-        npm --version
-      displayName: 'Display versions'
+    - task: PowerShell@2
+      displayName: 'Display Environment Information'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "=== Environment Information ==="
+          Write-Host "Agent OS: $(Agent.OS)"
+          Write-Host "Agent Architecture: $(Agent.Architecture)"
+          Write-Host "Working Directory: $(System.DefaultWorkingDirectory)"
+          Write-Host ""
+          Write-Host "=== Tool Versions ==="
+          dotnet --version
+          node --version
+          npm --version
+          docker --version
+          kubectl version --client
 
-    - script: |
-        dotnet restore $(solution)
+    - script: 'dotnet restore $(solution)'
       displayName: 'Restore NuGet packages'
 
-    - script: |
-        dotnet build $(solution) --configuration $(buildConfiguration) --no-restore
+    - script: 'dotnet build $(solution) --configuration $(buildConfiguration) --no-restore'
       displayName: 'Build solution'
 
-    - script: |
-        dotnet test src/Backend/KubernetesControlPanel.Tests/KubernetesControlPanel.Tests.csproj --configuration $(buildConfiguration) --no-build
+    - script: 'dotnet test src/Backend/KubernetesControlPanel.Tests/KubernetesControlPanel.Tests.csproj --configuration $(buildConfiguration) --no-build'
       displayName: 'Run unit tests'
       continueOnError: true
 
@@ -53,16 +62,16 @@ stages:
   - job: Package
     displayName: 'Create Docker Image'
     pool:
-      name: 'kubernetes-server-pool'
+      name: 'Default'
     steps:
-    - script: |
-        docker build -t $(dockerRegistry)/$(imageName):$(Build.BuildId) -t $(dockerRegistry)/$(imageName):latest -f docker/Dockerfile .
+    - script: 'echo "Building Docker image: $(imageName):$(imageTag)"'
       displayName: 'Build Docker image'
 
-    - script: |
-        docker push $(dockerRegistry)/$(imageName):$(Build.BuildId)
-        docker push $(dockerRegistry)/$(imageName):latest
-      displayName: 'Push Docker image'
+    - script: 'docker build -t $(imageName):$(imageTag) -t $(imageName):latest -f $(dockerfilePath) .'
+      displayName: 'Build Docker image'
+
+    - script: 'docker images | grep $(imageName)'
+      displayName: 'List Docker images'
 
 - stage: Deploy
   displayName: 'Deploy to Kubernetes'
@@ -71,22 +80,52 @@ stages:
   - job: Deploy
     displayName: 'Deploy to Kubernetes Cluster'
     pool:
-      name: 'kubernetes-server-pool'
+      name: 'Default'
     steps:
     - script: |
-        kubectl apply -f k8s/rbac.yaml
+        echo "=== Kubernetes Cluster Information ==="
+        kubectl cluster-info
+        kubectl get nodes
+        echo ""
+        echo "=== Current Namespace Status ==="
+        kubectl get all -n $(kubernetesNamespace)
+      displayName: 'Display cluster information'
+
+    - script: 'kubectl create namespace $(kubernetesNamespace) --dry-run=client -o yaml | kubectl apply -f -'
+      displayName: 'Ensure namespace exists'
+
+    - script: 'kubectl apply -f k8s/rbac.yaml'
+      displayName: 'Apply RBAC configuration'
+
+    - script: 'kubectl set image deployment/k8s-control-panel k8s-control-panel-api=$(imageName):$(imageTag) -n $(kubernetesNamespace) --record'
+      displayName: 'Update deployment with new image'
+      continueOnError: true
+
+    - script: |
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
         kubectl apply -f k8s/ingress.yaml
-      displayName: 'Deploy to Kubernetes cluster'
+      displayName: 'Apply Kubernetes manifests'
 
-    - script: |
-        kubectl rollout status deployment/kubernetes-control-panel -n $(kubernetesNamespace) --timeout=600s
+    - script: 'kubectl rollout status deployment/k8s-control-panel -n $(kubernetesNamespace) --timeout=600s'
       displayName: 'Wait for deployment rollout'
 
     - script: |
+        echo "=== Deployment Status ==="
         kubectl get pods -n $(kubernetesNamespace)
         kubectl get services -n $(kubernetesNamespace)
         kubectl get ingress -n $(kubernetesNamespace)
+        echo ""
+        echo "=== Pod Logs (first pod) ==="
+        kubectl logs -n $(kubernetesNamespace) -l app=k8s-control-panel --tail=50
       displayName: 'Verify deployment status'
+      continueOnError: true
+
+    - script: |
+        echo "=== Service Endpoints ==="
+        kubectl get endpoints -n $(kubernetesNamespace)
+        echo ""
+        echo "=== Ingress Status ==="
+        kubectl describe ingress -n $(kubernetesNamespace)
+      displayName: 'Display service endpoints'
       continueOnError: true 
