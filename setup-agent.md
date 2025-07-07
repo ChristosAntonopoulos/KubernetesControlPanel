@@ -1,187 +1,306 @@
-# Self-Hosted Azure DevOps Agent Setup
+# Kubernetes Control Panel - Ubuntu Server Deployment Guide
 
-## Prerequisites
-- Windows Server or Linux server with access to your Kubernetes cluster
-- Docker installed on the agent machine
-- kubectl configured and accessible
-- .NET 8.0 SDK installed
-- Node.js 18+ installed
-- **Internet connectivity** for downloading the agent
+## 🎯 Overview
 
-## Network Troubleshooting
+This guide explains how to deploy the Kubernetes Control Panel to your Ubuntu server using Azure DevOps pipeline with local Docker image building.
 
-### Check Internet Connectivity
-```bash
-# Test DNS resolution
-nslookup google.com
-ping google.com
+## 🏗️ Architecture
 
-# Test HTTPS connectivity
-curl -I https://www.google.com
-
-# Check DNS configuration
-cat /etc/resolv.conf
+```
+Azure DevOps Agent (Local) → Build Docker Image → Deploy to Ubuntu Server Kubernetes
 ```
 
-### Fix DNS Issues
-```bash
-# Use Google DNS temporarily
-echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
-echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
+### Key Components:
+- **Azure DevOps Agent**: Builds the application and Docker image locally
+- **Docker Image**: `k8s-control-panel:latest` built on the agent
+- **Ubuntu Server**: Runs Kubernetes cluster
+- **Kubernetes Resources**: Deployed via YAML files in `k8s/` directory
 
-# Or use Cloudflare DNS
-echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf
-echo "nameserver 1.0.0.1" | sudo tee -a /etc/resolv.conf
-```
+## 📋 Prerequisites
 
-## Installation Steps
+### Ubuntu Server Requirements:
+- [ ] Kubernetes cluster running (kubeadm, minikube, or cloud provider)
+- [ ] kubectl configured and accessible
+- [ ] Docker daemon running
+- [ ] Network connectivity between agent and server
 
-### Method 1: Direct Download (if DNS works)
-```bash
-# Create agent directory
-mkdir azure-agent
-cd azure-agent
+### Azure DevOps Agent Requirements:
+- [ ] .NET 8.0 SDK
+- [ ] Node.js 18+ and npm
+- [ ] Docker CLI
+- [ ] kubectl configured to connect to Ubuntu server cluster
 
-# Download agent
-wget https://vstsagentpackage.azureedge.net/agent/3.232.0/vsts-agent-linux-x64-3.232.0.tar.gz
+## 🔧 Configuration Steps
 
-# Extract
-tar zxvf vsts-agent-linux-x64-3.232.0.tar.gz
-```
+### 1. Configure kubectl on Azure DevOps Agent
 
-### Method 2: Alternative Download URLs
-```bash
-# Try alternative URLs if the main one fails
-wget https://github.com/microsoft/azure-pipelines-agent/releases/download/v3.232.0/vsts-agent-linux-x64-3.232.0.tar.gz
-
-# Or download from Azure DevOps directly
-wget https://dev.azure.com/microsoft/_apis/resources/Containers/1234567?itemPath=agent%2Fvsts-agent-linux-x64-3.232.0.tar.gz
-```
-
-### Method 3: Manual Download and Transfer
-If your server has no internet access:
-
-1. **Download on your local machine**:
-   ```bash
-   # On your local machine with internet
-   wget https://vstsagentpackage.azureedge.net/agent/3.232.0/vsts-agent-linux-x64-3.232.0.tar.gz
-   ```
-
-2. **Transfer to server**:
-   ```bash
-   # Using SCP
-   scp vsts-agent-linux-x64-3.232.0.tar.gz root@your-server-ip:/root/azure-agent/
-   
-   # Or using SFTP
-   sftp root@your-server-ip
-   put vsts-agent-linux-x64-3.232.0.tar.gz /root/azure-agent/
-   ```
-
-3. **Extract on server**:
-   ```bash
-   cd azure-agent
-   tar zxvf vsts-agent-linux-x64-3.232.0.tar.gz
-   ```
-
-### Method 4: Use Docker Agent (Alternative Approach)
-If network issues persist, consider using a Docker-based agent:
+The agent needs to connect to your Ubuntu server's Kubernetes cluster:
 
 ```bash
-# Pull the agent image
-docker pull mcr.microsoft.com/azure-pipelines/vsts-agent:ubuntu-20.04
-
-# Run as container
-docker run -d \
-  --name azure-agent \
-  -e AZP_URL=https://dev.azure.com/your-organization \
-  -e AZP_TOKEN=your-pat-token \
-  -e AZP_POOL=kubernetes-server-pool \
-  -e AZP_AGENT_NAME=kubernetes-server-agent \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /usr/bin/docker:/usr/bin/docker \
-  -v /usr/bin/kubectl:/usr/bin/kubectl \
-  mcr.microsoft.com/azure-pipelines/vsts-agent:ubuntu-20.04
+# On the Azure DevOps agent, configure kubectl to point to your Ubuntu server
+kubectl config set-cluster ubuntu-cluster --server=https://YOUR_UBUNTU_SERVER_IP:6443
+kubectl config set-credentials ubuntu-user --token=YOUR_SERVICE_ACCOUNT_TOKEN
+kubectl config set-context ubuntu-context --cluster=ubuntu-cluster --user=ubuntu-user
+kubectl config use-context ubuntu-context
 ```
 
-## Configuration
+### 2. Verify Connection
 
-### Configure Agent
 ```bash
-# Run configuration
-./config.sh
-
-# You'll need these details from Azure DevOps:
-# - Server URL: https://dev.azure.com/your-organization
-# - Authentication type: Personal Access Token (PAT)
-# - Agent pool: kubernetes-server-pool
-# - Agent name: kubernetes-server-agent
-# - Work folder: _work
+# Test connection to Ubuntu server cluster
+kubectl cluster-info
+kubectl get nodes
 ```
 
-### Install as Service
+### 3. Docker Image Sharing
+
+Since the agent builds the image locally, ensure your Ubuntu server can access it:
+
+**Option A: Docker Registry (Recommended for Production)**
 ```bash
-# Install as systemd service (Linux)
-sudo ./svc.sh install
-sudo ./svc.sh start
-
-# Or run manually
-./run.sh
+# Push to a registry that both agent and server can access
+docker tag k8s-control-panel:latest your-registry/k8s-control-panel:latest
+docker push your-registry/k8s-control-panel:latest
 ```
 
-## Agent Requirements
-
-### Software Dependencies
-- Docker 20.10+
-- kubectl (configured for your cluster)
-- .NET 8.0 SDK
-- Node.js 18+
-- Git
-
-### Network Access
-- Outbound HTTPS to Azure DevOps
-- Access to your Kubernetes cluster API
-- Access to container registry (if using private registry)
-
-### Permissions
-- Docker daemon access
-- Kubernetes cluster access
-- File system write permissions
-
-## Troubleshooting
-
-### Common Issues
-1. **Agent not connecting**: Check network connectivity and PAT token
-2. **Docker permission denied**: Add user to docker group
-3. **kubectl not found**: Install and configure kubectl
-4. **Build failures**: Verify .NET SDK and Node.js installation
-5. **Network connectivity**: Check DNS and firewall settings
-
-### Logs
+**Option B: Image Transfer (Development)**
 ```bash
-# View agent logs
-tail -f _diag/*.log
+# Save image on agent
+docker save k8s-control-panel:latest > k8s-control-panel.tar
 
-# Check service status
-sudo systemctl status vsts.agent.kubernetes-server-pool.kubernetes-server-agent
+# Transfer to Ubuntu server
+scp k8s-control-panel.tar user@ubuntu-server:/tmp/
+
+# Load image on Ubuntu server
+docker load < /tmp/k8s-control-panel.tar
 ```
 
-## Alternative: GitHub Actions (if Azure DevOps is problematic)
+## 🚀 Deployment Process
 
-If you continue having issues with Azure DevOps, consider using GitHub Actions instead:
+### 1. Pipeline Execution
 
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy to Kubernetes
-on:
-  push:
-    branches: [master]
+When you commit changes, the Azure DevOps pipeline will:
 
-jobs:
-  deploy:
-    runs-on: self-hosted
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build and Deploy
-      run: |
-        # Your deployment scripts here
-``` 
+1. **Build Stage**: Compile .NET and React applications
+2. **Package Stage**: Build Docker image `k8s-control-panel:latest`
+3. **Deploy Stage**: Apply Kubernetes manifests to Ubuntu server
+
+### 2. Kubernetes Resources Applied
+
+The pipeline applies these resources in order:
+
+```bash
+# 1. Create namespace
+kubectl create namespace k8s-control-panel
+
+# 2. Apply RBAC (Service Account, Roles, Role Bindings)
+kubectl apply -f k8s/rbac.yaml
+
+# 3. Apply core resources
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+```
+
+### 3. Resource Details
+
+#### **Namespace**: `k8s-control-panel`
+- Isolated environment for the control panel
+
+#### **Service Account**: `k8s-control-panel`
+- Minimal RBAC permissions for cluster monitoring
+- Can read pods, nodes, namespaces, events
+- Can delete pods (for restart functionality)
+
+#### **Deployment**: `k8s-control-panel`
+- 1 replica (configurable)
+- Resource limits: 512Mi memory, 500m CPU
+- Health checks on `/health` endpoint
+- Volume mount for logs
+
+#### **Service**: `k8s-control-panel-service`
+- NodePort type
+- HTTP: Port 30080
+- HTTPS: Port 30443
+
+#### **Ingress**: `k8s-control-panel-ingress`
+- Routes external traffic to the service
+- Requires ingress controller on Ubuntu server
+
+## 🌐 Access Points
+
+### From Ubuntu Server:
+```bash
+# Get node IP
+kubectl get nodes -o wide
+
+# Access via NodePort
+curl http://NODE_IP:30080/health
+```
+
+### From External Network:
+```bash
+# If ingress is configured
+curl http://YOUR_DOMAIN_OR_IP/
+
+# Direct NodePort access
+curl http://UBUNTU_SERVER_IP:30080/
+```
+
+## 🔍 Verification Commands
+
+### Check Deployment Status:
+```bash
+# Verify all resources
+kubectl get all -n k8s-control-panel
+
+# Check pod status
+kubectl get pods -n k8s-control-panel
+
+# Check service endpoints
+kubectl get endpoints -n k8s-control-panel
+
+# Check ingress
+kubectl get ingress -n k8s-control-panel
+```
+
+### Check Application Health:
+```bash
+# Test health endpoint
+kubectl exec -n k8s-control-panel deployment/k8s-control-panel -- curl -f http://localhost/health
+
+# View application logs
+kubectl logs -n k8s-control-panel -l app=k8s-control-panel
+
+# Describe pod for troubleshooting
+kubectl describe pod -n k8s-control-panel -l app=k8s-control-panel
+```
+
+### Verify RBAC:
+```bash
+# Test service account permissions
+kubectl auth can-i get pods --as=system:serviceaccount:k8s-control-panel:k8s-control-panel -n k8s-control-panel
+kubectl auth can-i get nodes --as=system:serviceaccount:k8s-control-panel:k8s-control-panel
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues:
+
+#### **1. Image Pull Errors**
+```bash
+# Check if image exists on Ubuntu server
+docker images | grep k8s-control-panel
+
+# If missing, transfer image from agent
+docker save k8s-control-panel:latest | ssh user@ubuntu-server 'docker load'
+```
+
+#### **2. Pod Startup Issues**
+```bash
+# Check pod events
+kubectl describe pod -n k8s-control-panel -l app=k8s-control-panel
+
+# Check application logs
+kubectl logs -n k8s-control-panel -l app=k8s-control-panel
+
+# Verify health endpoint
+kubectl exec -n k8s-control-panel deployment/k8s-control-panel -- curl -f http://localhost/health
+```
+
+#### **3. RBAC Permission Errors**
+```bash
+# Check service account
+kubectl get serviceaccount -n k8s-control-panel
+
+# Verify role binding
+kubectl get clusterrolebinding k8s-control-panel-binding
+
+# Test permissions
+kubectl auth can-i get pods --as=system:serviceaccount:k8s-control-panel:k8s-control-panel
+```
+
+#### **4. Network Connectivity**
+```bash
+# Check service endpoints
+kubectl get endpoints -n k8s-control-panel
+
+# Test service connectivity
+kubectl run test-pod --image=busybox --rm -it --restart=Never -- wget -O- http://k8s-control-panel-service:80/health
+
+# Check ingress controller
+kubectl get pods -n ingress-nginx
+```
+
+## 🔄 Update Process
+
+### Making Changes:
+
+1. **Application Changes**: Modify code in `src/` directory
+2. **Kubernetes Changes**: Update YAML files in `k8s/` directory
+3. **Commit & Push**: Trigger Azure DevOps pipeline
+4. **Automatic Deployment**: Pipeline builds and deploys to Ubuntu server
+
+### Manual Updates (if needed):
+```bash
+# Update deployment with new image
+kubectl set image deployment/k8s-control-panel k8s-control-panel-api=k8s-control-panel:latest -n k8s-control-panel
+
+# Apply YAML changes
+kubectl apply -f k8s/deployment.yaml
+
+# Check rollout status
+kubectl rollout status deployment/k8s-control-panel -n k8s-control-panel
+```
+
+## 📊 Monitoring
+
+### Health Checks:
+- **Liveness Probe**: `/health` endpoint every 10 seconds
+- **Readiness Probe**: `/health` endpoint every 5 seconds
+- **Resource Monitoring**: CPU and memory limits enforced
+
+### Logging:
+- Application logs available via `kubectl logs`
+- Log volume mounted at `/app/logs`
+- Structured logging with Serilog
+
+### Metrics:
+- Resource usage via Kubernetes metrics API
+- Real-time updates via SignalR
+- Dashboard metrics refresh every 30 seconds
+
+## 🔐 Security Considerations
+
+### RBAC Permissions:
+- Minimal required permissions for monitoring
+- No write access to cluster configuration
+- Pod deletion limited to restart functionality
+
+### Network Security:
+- Service isolated in dedicated namespace
+- Ingress with SSL/TLS support (configure as needed)
+- Internal service communication only
+
+### Resource Limits:
+- Memory: 128Mi request, 512Mi limit
+- CPU: 100m request, 500m limit
+- Prevents resource exhaustion
+
+## 📝 Next Steps
+
+1. **Configure kubectl** on Azure DevOps agent to connect to Ubuntu server
+2. **Set up image sharing** between agent and server
+3. **Test deployment** with current pipeline
+4. **Configure ingress controller** on Ubuntu server (if needed)
+5. **Set up monitoring** and alerting
+6. **Configure SSL/TLS** for production use
+
+## 🆘 Support
+
+For issues:
+1. Check pipeline logs in Azure DevOps
+2. Verify kubectl connection to Ubuntu server
+3. Check pod logs and events
+4. Verify image availability on Ubuntu server
+5. Test network connectivity between components 

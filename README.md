@@ -1,188 +1,180 @@
 # Kubernetes Control Panel
 
-A modern, user-friendly web-based control panel for monitoring and managing Kubernetes clusters. This application provides real-time insights into cluster health, pod status, node information, and namespace management.
+A comprehensive Kubernetes monitoring and management control panel deployed as a pod inside a Kubernetes cluster running on Ubuntu server. This project follows GitOps principles where all Kubernetes configurations are version-controlled in YAML files and automatically deployed through Azure DevOps CI/CD pipeline.
 
-## Features
+## 🎯 Project Overview
 
-- 📊 **Dashboard**: Real-time cluster overview with health status and metrics
-- 🐳 **Pod Management**: View, filter, and manage pods across all namespaces
-- 🖥️ **Node Monitoring**: Monitor node health and resource allocation
-- 📁 **Namespace Overview**: Manage and view namespace resources
-- 🔄 **Real-time Updates**: Live status updates using SignalR
-- 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
-- 🔐 **Secure Access**: Service account-based authentication
+This Kubernetes control panel provides:
+- **Real-time cluster monitoring** with live status updates via SignalR
+- **Pod management** with detailed views, logs, and actions
+- **Node monitoring** with resource allocation and health status
+- **Namespace management** with resource quotas and pod distribution
+- **User-friendly web interface** built with React and Material-UI
+- **Secure API** built with ASP.NET Core and proper RBAC
 
-## Technology Stack
+## 🏗️ Architecture
 
-### Backend
-- **ASP.NET Core 8.0** - Web API framework
-- **Kubernetes Client Library** - Official .NET client for K8s API
-- **SignalR** - Real-time communication
-- **Serilog** - Structured logging
-- **AutoMapper** - Object mapping
+### GitOps Deployment Model
+- **Source of Truth**: All Kubernetes configurations are stored in `k8s/` directory
+- **Automated Deployment**: Azure DevOps pipeline automatically applies changes
+- **Target Environment**: Ubuntu server running Kubernetes cluster
+- **Version Control**: All infrastructure changes are tracked in Git
 
-### Frontend
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Material-UI (MUI)** - UI component library
-- **React Query** - Data fetching and caching
-- **React Router** - Client-side routing
+### Technology Stack
+- **Frontend**: React with TypeScript, Material-UI components
+- **Backend**: ASP.NET Core Web API with C#
+- **Real-time Updates**: SignalR for live cluster status
+- **Authentication**: Kubernetes service account with RBAC
+- **Container**: Multi-stage Docker build with .NET 8.0
+- **CI/CD**: Azure DevOps pipeline with automated deployment
 
-### Infrastructure
-- **Docker** - Containerization
-- **Kubernetes** - Deployment platform
-- **Azure DevOps** - CI/CD pipeline
+## 🚀 Deployment Flow
 
-## Project Structure
+1. **Development**: Make changes to application code or Kubernetes YAML files
+2. **Commit & Push**: Changes are committed to Git repository
+3. **Pipeline Trigger**: Azure DevOps pipeline automatically starts
+4. **Build**: Application is built and containerized
+5. **Deploy**: Kubernetes manifests are applied to Ubuntu server cluster
+6. **Verification**: Health checks and status verification
+
+## 📁 Project Structure
 
 ```
 KubernetesControlPanel/
+├── k8s/                          # Kubernetes manifests (Source of Truth)
+│   ├── deployment.yaml           # Application deployment
+│   ├── service.yaml              # Service configuration
+│   ├── ingress.yaml              # Ingress rules
+│   └── rbac.yaml                 # RBAC permissions
 ├── src/
-│   ├── Frontend/          # React TypeScript application
-│   └── Backend/           # ASP.NET Core Web API
-├── k8s/                   # Kubernetes manifests
-├── docker/               # Docker configurations
-├── azure-pipelines.yml   # Azure DevOps pipeline
-└── README.md
+│   ├── Frontend/                 # React TypeScript application
+│   └── Backend/                  # ASP.NET Core Web API
+├── docker/
+│   └── Dockerfile                # Multi-stage container build
+├── azure-pipelines.yml           # CI/CD pipeline configuration
+└── README.md                     # This file
 ```
 
-## Quick Start
+## 🔧 Configuration Management
 
-### Prerequisites
+### Kubernetes Configuration
+All Kubernetes resources are defined in YAML files under `k8s/`:
+- **deployment.yaml**: Application deployment with health checks and resource limits
+- **service.yaml**: NodePort service exposing HTTP/HTTPS ports
+- **ingress.yaml**: Ingress configuration for external access
+- **rbac.yaml**: Service account, roles, and role bindings
 
-- .NET 8.0 SDK
-- Node.js 18+ and npm
-- Docker
-- Kubernetes cluster access
-- Azure DevOps account (for deployment)
+### Environment Configuration
+- **Development**: Local development with hot reload
+- **Production**: Kubernetes deployment with proper resource limits
+- **Configuration**: Environment-specific settings via Kubernetes ConfigMaps/Secrets
+
+## 🔐 Security Features
+
+- **RBAC**: Proper service account with minimal required permissions
+- **Network Security**: Ingress with SSL/TLS support
+- **Resource Isolation**: Namespace-based isolation
+- **Health Monitoring**: Liveness and readiness probes
+
+## 📊 Monitoring & Observability
+
+- **Health Checks**: Built-in health endpoints
+- **Logging**: Structured logging with volume mounts
+- **Metrics**: Resource usage monitoring
+- **Real-time Updates**: Live cluster status via SignalR
+
+## 🛠️ Development Workflow
+
+### Making Changes
+1. **Application Changes**: Modify source code in `src/` directory
+2. **Kubernetes Changes**: Update YAML files in `k8s/` directory
+3. **Commit Changes**: Commit to Git repository
+4. **Pipeline Execution**: Azure DevOps automatically deploys changes
 
 ### Local Development
+```bash
+# Frontend development
+cd src/Frontend
+npm install
+npm start
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd KubernetesControlPanel
-   ```
-
-2. **Backend Setup**
-   ```bash
-   cd src/Backend
-   dotnet restore
-   dotnet run
-   ```
-
-3. **Frontend Setup**
-   ```bash
-   cd src/Frontend
-   npm install
-   npm start
-   ```
-
-4. **Access the application**
-   - Backend API: http://localhost:5000
-   - Frontend: http://localhost:3000
-   - API Documentation: http://localhost:5000/swagger
+# Backend development
+cd src/Backend/KubernetesControlPanel.API
+dotnet run
+```
 
 ### Kubernetes Deployment
+```bash
+# Manual deployment (if needed)
+kubectl apply -f k8s/rbac.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+```
 
-1. **Create namespace**
-   ```bash
-   kubectl create namespace k8s-control-panel
-   ```
+## 🌐 Access Points
 
-2. **Apply RBAC**
-   ```bash
-   kubectl apply -f k8s/rbac.yaml
-   ```
+### Production Access
+- **NodePort Service**: `http://<ubuntu-server-ip>:30080`
+- **HTTPS Service**: `https://<ubuntu-server-ip>:30443`
+- **Ingress Access**: Configured through ingress controller
 
-3. **Deploy the application**
-   ```bash
-   kubectl apply -f k8s/deployment.yaml
-   kubectl apply -f k8s/service.yaml
-   kubectl apply -f k8s/ingress.yaml
-   ```
+### Development Access
+- **Frontend**: `http://localhost:3000`
+- **Backend API**: `http://localhost:5000`
 
-## Configuration
+## 📈 Scaling & Performance
 
-### Environment Variables
+- **Horizontal Scaling**: Deployment supports multiple replicas
+- **Resource Management**: CPU and memory limits configured
+- **Caching**: In-memory caching for cluster data
+- **Optimization**: Efficient API calls and real-time updates
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `KUBERNETES_SERVICE_HOST` | K8s API server host | Auto-detected |
-| `KUBERNETES_SERVICE_PORT` | K8s API server port | Auto-detected |
-| `LOG_LEVEL` | Logging level | Information |
-| `CORS_ORIGINS` | Allowed CORS origins | * |
+## 🔄 Update Process
 
-### Service Account
+### Application Updates
+1. Modify application code
+2. Commit and push to repository
+3. Pipeline builds new container image
+4. Kubernetes deployment is updated automatically
 
-The application requires a Kubernetes service account with the following permissions:
-- `pods` - read, list, watch
-- `nodes` - read, list, watch
-- `namespaces` - read, list, watch
-- `events` - read, list, watch
+### Infrastructure Updates
+1. Modify YAML files in `k8s/` directory
+2. Commit and push to repository
+3. Pipeline applies new Kubernetes configurations
+4. Changes are deployed to Ubuntu server cluster
 
-## API Endpoints
+## 🚨 Troubleshooting
 
-### Dashboard
-- `GET /api/dashboard/overview` - Cluster overview
-- `GET /api/dashboard/metrics` - Resource metrics
+### Common Issues
+- **Pod Startup Issues**: Check health endpoint implementation
+- **RBAC Permission Errors**: Verify service account permissions
+- **Image Pull Issues**: Ensure image is available in registry
+- **Network Connectivity**: Verify service and ingress configuration
 
-### Pods
-- `GET /api/pods` - List all pods
-- `GET /api/pods/{namespace}` - Pods by namespace
-- `GET /api/pods/{namespace}/{name}` - Pod details
-- `GET /api/pods/{namespace}/{name}/logs` - Pod logs
+### Debug Commands
+```bash
+# Check deployment status
+kubectl get pods -n k8s-control-panel
 
-### Nodes
-- `GET /api/nodes` - List all nodes
-- `GET /api/nodes/{name}` - Node details
+# View application logs
+kubectl logs -n k8s-control-panel -l app=k8s-control-panel
 
-### Namespaces
-- `GET /api/namespaces` - List all namespaces
-- `GET /api/namespaces/{name}` - Namespace details
+# Check service endpoints
+kubectl get endpoints -n k8s-control-panel
 
-## Development
+# Verify RBAC permissions
+kubectl auth can-i get pods --as=system:serviceaccount:k8s-control-panel:k8s-control-panel
+```
 
-### Adding New Features
-
-1. **Backend**: Add controllers, services, and models in the appropriate folders
-2. **Frontend**: Add components and pages in the React application
-3. **Testing**: Write unit and integration tests
-4. **Documentation**: Update API documentation and README
-
-### Code Style
-
-- Follow C# and TypeScript coding conventions
-- Use meaningful variable and function names
-- Implement proper error handling
-- Write comprehensive tests
-- Document public APIs
-
-## Contributing
+## 📝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
+4. Test locally and in pipeline
 5. Submit a pull request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For support and questions:
-- Create an issue in the repository
-- Check the documentation
-- Review the troubleshooting guide
-
-## Roadmap
-
-- [ ] Advanced pod management (scale, restart, delete)
-- [ ] Resource quota management
-- [ ] Custom metrics integration
-- [ ] Multi-cluster support
-- [ ] Role-based access control (RBAC) management
-- [ ] Backup and restore functionality
-- [ ] Performance monitoring and alerts 
+This project is licensed under the MIT License - see the LICENSE file for details. 

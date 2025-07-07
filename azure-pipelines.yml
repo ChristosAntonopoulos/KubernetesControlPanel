@@ -8,6 +8,10 @@ variables:
   imageTag: '$(Build.BuildId)'
   kubernetesNamespace: 'k8s-control-panel'
   dockerfilePath: 'docker/Dockerfile'
+  # Docker Hub configuration - update with your Docker Hub username
+  dockerRegistry: 'your-dockerhub-username'
+  fullImageName: '$(dockerRegistry)/$(imageName)'
+
 
 stages:
 - stage: Build
@@ -57,15 +61,26 @@ stages:
   dependsOn: Build
   jobs:
   - job: Package
-    displayName: 'Create Docker Image'
+    displayName: 'Create and Push Docker Image'
     pool:
       name: 'Default'
     steps:
-    - script: 'echo "Building Docker image: $(imageName):$(imageTag)"'
+    - script: 'echo "Building Docker image: $(fullImageName):$(imageTag)"'
       displayName: 'Echo build info'
 
-    - script: 'docker build -t $(imageName):$(imageTag) -t $(imageName):latest -f $(dockerfilePath) .'
+    # Login to Docker Hub (configure these variables in Azure DevOps)
+    - script: 'echo "$(DOCKER_PASSWORD)" | docker login -u "$(DOCKER_USERNAME)" --password-stdin'
+      displayName: 'Login to Docker Hub'
+      continueOnError: true
+
+    - script: 'docker build -t $(fullImageName):$(imageTag) -t $(fullImageName):latest -f $(dockerfilePath) .'
       displayName: 'Build Docker image'
+
+    - script: 'docker push $(fullImageName):$(imageTag)'
+      displayName: 'Push Docker image with tag'
+
+    - script: 'docker push $(fullImageName):latest'
+      displayName: 'Push Docker image as latest'
 
     - script: 'docker images | grep $(imageName)'
       displayName: 'List Docker images'

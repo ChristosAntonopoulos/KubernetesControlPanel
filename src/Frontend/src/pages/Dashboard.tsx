@@ -222,7 +222,7 @@ const Dashboard: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Namespace Pod Distribution
               </Typography>
-              <TableContainer component={Paper} variant="outlined">
+              <TableContainer component={Paper}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
