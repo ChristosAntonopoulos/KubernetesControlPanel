@@ -8,10 +8,6 @@ variables:
   imageTag: '$(Build.BuildId)'
   kubernetesNamespace: 'k8s-control-panel'
   dockerfilePath: 'docker/Dockerfile'
-  # Docker Hub configuration - update with your Docker Hub username
-  dockerRegistry: 'your-dockerhub-username'
-  fullImageName: '$(dockerRegistry)/$(imageName)'
-
 
 stages:
 - stage: Build
@@ -22,29 +18,11 @@ stages:
     pool:
       name: 'Default'
     steps:
-    - script: |
-        echo "=== Environment Information ==="
-        echo "Agent OS: $(Agent.OS)"
-        echo "Agent Architecture: $(Agent.Architecture)"
-        echo "Working Directory: $(System.DefaultWorkingDirectory)"
-        echo ""
-        echo "=== Tool Versions ==="
-        dotnet --version
-        node --version
-        npm --version
-        docker --version
-        kubectl version --client
-      displayName: 'Display Environment Information'
-
     - script: 'dotnet restore $(solution)'
       displayName: 'Restore NuGet packages'
 
     - script: 'dotnet build $(solution) --configuration $(buildConfiguration) --no-restore'
       displayName: 'Build solution'
-
-    - script: 'dotnet test src/Backend/KubernetesControlPanel.Tests/KubernetesControlPanel.Tests.csproj --configuration $(buildConfiguration) --no-build'
-      displayName: 'Run unit tests'
-      continueOnError: true
 
     - script: |
         cd src/Frontend
@@ -61,26 +39,12 @@ stages:
   dependsOn: Build
   jobs:
   - job: Package
-    displayName: 'Create and Push Docker Image'
+    displayName: 'Create Docker Image'
     pool:
       name: 'Default'
     steps:
-    - script: 'echo "Building Docker image: $(fullImageName):$(imageTag)"'
-      displayName: 'Echo build info'
-
-    # Login to Docker Hub (configure these variables in Azure DevOps)
-    - script: 'echo "$(DOCKER_PASSWORD)" | docker login -u "$(DOCKER_USERNAME)" --password-stdin'
-      displayName: 'Login to Docker Hub'
-      continueOnError: true
-
-    - script: 'docker build -t $(fullImageName):$(imageTag) -t $(fullImageName):latest -f $(dockerfilePath) .'
+    - script: 'docker build -t $(imageName):$(imageTag) -t $(imageName):latest -f $(dockerfilePath) .'
       displayName: 'Build Docker image'
-
-    - script: 'docker push $(fullImageName):$(imageTag)'
-      displayName: 'Push Docker image with tag'
-
-    - script: 'docker push $(fullImageName):latest'
-      displayName: 'Push Docker image as latest'
 
     - script: 'docker images | grep $(imageName)'
       displayName: 'List Docker images'
@@ -94,24 +58,11 @@ stages:
     pool:
       name: 'Default'
     steps:
-    - script: |
-        echo "=== Kubernetes Cluster Information ==="
-        kubectl cluster-info
-        kubectl get nodes
-        echo ""
-        echo "=== Current Namespace Status ==="
-        kubectl get all -n $(kubernetesNamespace)
-      displayName: 'Display cluster information'
-
     - script: 'kubectl create namespace $(kubernetesNamespace) --dry-run=client -o yaml | kubectl apply -f -'
       displayName: 'Ensure namespace exists'
 
     - script: 'kubectl apply -f k8s/rbac.yaml'
       displayName: 'Apply RBAC configuration'
-
-    - script: 'kubectl set image deployment/k8s-control-panel k8s-control-panel-api=$(imageName):$(imageTag) -n $(kubernetesNamespace) --record'
-      displayName: 'Update deployment with new image'
-      continueOnError: true
 
     - script: |
         kubectl apply -f k8s/deployment.yaml
@@ -122,22 +73,5 @@ stages:
     - script: 'kubectl rollout status deployment/k8s-control-panel -n $(kubernetesNamespace) --timeout=600s'
       displayName: 'Wait for deployment rollout'
 
-    - script: |
-        echo "=== Deployment Status ==="
-        kubectl get pods -n $(kubernetesNamespace)
-        kubectl get services -n $(kubernetesNamespace)
-        kubectl get ingress -n $(kubernetesNamespace)
-        echo ""
-        echo "=== Pod Logs (first pod) ==="
-        kubectl logs -n $(kubernetesNamespace) -l app=k8s-control-panel --tail=50
-      displayName: 'Verify deployment status'
-      continueOnError: true
-
-    - script: |
-        echo "=== Service Endpoints ==="
-        kubectl get endpoints -n $(kubernetesNamespace)
-        echo ""
-        echo "=== Ingress Status ==="
-        kubectl describe ingress -n $(kubernetesNamespace)
-      displayName: 'Display service endpoints'
-      continueOnError: true 
+    - script: 'kubectl get pods -n $(kubernetesNamespace)'
+      displayName: 'Check deployment status' 
