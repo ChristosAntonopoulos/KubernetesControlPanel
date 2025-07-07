@@ -18,7 +18,7 @@ spec:
       serviceAccountName: k8s-control-panel
       containers:
       - name: k8s-control-panel-api
-        image: your-dockerhub-username/k8s-control-panel:latest
+        image: YOUR_ACTUAL_DOCKERHUB_USERNAME/k8s-control-panel:latest
         ports:
         - containerPort: 80
           name: http
