@@ -9,7 +9,7 @@ variables:
   kubernetesNamespace: 'k8s-control-panel'
   dockerfilePath: 'docker/Dockerfile'
   # Docker Hub configuration - update with your Docker Hub username
-  dockerRegistry: 'captainbot'
+  dockerRegistry: 'botsystem13'
   fullImageName: '$(dockerRegistry)/$(imageName)'
 
 stages:

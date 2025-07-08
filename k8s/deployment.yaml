@@ -18,7 +18,7 @@ spec:
       serviceAccountName: k8s-control-panel
       containers:
       - name: k8s-control-panel-api
-        image: captainbot/k8s-control-panel:latest
+        image: botsystem13/k8s-control-panel:latest
         ports:
         - containerPort: 80
           name: http
