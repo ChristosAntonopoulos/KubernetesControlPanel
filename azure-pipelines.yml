@@ -8,12 +8,9 @@ variables:
   imageTag: '$(Build.BuildId)'
   kubernetesNamespace: 'k8s-control-panel'
   dockerfilePath: 'docker/Dockerfile'
-  # Ubuntu server details - update these with your actual server details
-  ubuntuServer: 'vmi2671559'
-  ubuntuUser: 'root'
-  # Alternative: Use a simple registry (uncomment if SSH doesn't work)
-  # dockerRegistry: 'registry.hub.docker.com'
-  # fullImageName: '$(dockerRegistry)/$(imageName)'
+  # Docker Hub configuration - update with your Docker Hub username
+  dockerRegistry: 'captainbot'
+  fullImageName: '$(dockerRegistry)/$(imageName)'
 
 stages:
 - stage: Build
@@ -45,23 +42,23 @@ stages:
   dependsOn: Build
   jobs:
   - job: Package
-    displayName: 'Create and Transfer Docker Image'
+    displayName: 'Create and Push Docker Image'
     pool:
       name: 'Default'
     steps:
-    - script: 'docker build -t $(imageName):$(imageTag) -t $(imageName):latest -f $(dockerfilePath) .'
+    - script: 'docker build -t $(fullImageName):$(imageTag) -t $(fullImageName):latest -f $(dockerfilePath) .'
       displayName: 'Build Docker image'
 
-    - script: 'docker save $(imageName):latest > $(imageName).tar'
-      displayName: 'Save Docker image to tar file'
-
-    - script: 'scp $(imageName).tar $(ubuntuUser)@$(ubuntuServer):/tmp/'
-      displayName: 'Transfer image to Ubuntu server'
+    # Login to Docker Hub (configure these variables in Azure DevOps)
+    - script: 'echo "$(DOCKER_PASSWORD)" | docker login -u "$(DOCKER_USERNAME)" --password-stdin'
+      displayName: 'Login to Docker Hub'
       continueOnError: true
 
-    - script: 'ssh $(ubuntuUser)@$(ubuntuServer) "docker load < /tmp/$(imageName).tar && rm /tmp/$(imageName).tar"'
-      displayName: 'Load image on Ubuntu server'
-      continueOnError: true
+    - script: 'docker push $(fullImageName):$(imageTag)'
+      displayName: 'Push Docker image with tag'
+
+    - script: 'docker push $(fullImageName):latest'
+      displayName: 'Push Docker image as latest'
 
     - script: 'docker images | grep $(imageName)'
       displayName: 'List Docker images'
