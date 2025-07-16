@@ -16,6 +16,14 @@ import {
   TableHead,
   TableRow,
   Alert,
+  IconButton,
+  Tooltip,
+  Badge,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
 } from '@mui/material';
 import {
   CheckCircle as HealthyIcon,
@@ -24,12 +32,17 @@ import {
   Storage as PodsIcon,
   Computer as NodesIcon,
   Folder as NamespacesIcon,
+  Refresh as RefreshIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  Info as InfoIcon,
+  Event as EventIcon,
 } from '@mui/icons-material';
 import { dashboardApi } from '../services/api';
 import { DashboardInfo } from '../types';
 
 const Dashboard: React.FC = () => {
-  const { data: dashboardInfo, isLoading, error } = useQuery<DashboardInfo>({
+  const { data: dashboardInfo, isLoading, error, refetch } = useQuery<DashboardInfo>({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -77,11 +90,38 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const getEventIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'normal':
+        return <InfoIcon color="info" />;
+      case 'warning':
+        return <WarningIcon color="warning" />;
+      default:
+        return <ErrorIcon color="error" />;
+    }
+  };
+
+  const getEventColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'normal':
+        return 'info';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'error';
+    }
+  };
+
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Cluster Dashboard
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4">Cluster Dashboard</Typography>
+        <Tooltip title="Refresh">
+          <IconButton onClick={() => refetch()}>
+            <RefreshIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
       {/* Cluster Health Status */}
       <Card sx={{ mb: 3 }}>
@@ -113,9 +153,20 @@ const Dashboard: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 Total Nodes
               </Typography>
-              <Typography variant="caption" color="success.main">
-                {dashboardInfo.readyNodes} Ready
-              </Typography>
+              <Box display="flex" alignItems="center" gap={1} mt={1}>
+                <Chip
+                  label={`${dashboardInfo.readyNodes} Ready`}
+                  color="success"
+                  size="small"
+                />
+                {dashboardInfo.totalNodes > dashboardInfo.readyNodes && (
+                  <Chip
+                    label={`${dashboardInfo.totalNodes - dashboardInfo.readyNodes} Not Ready`}
+                    color="warning"
+                    size="small"
+                  />
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -130,9 +181,27 @@ const Dashboard: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 Total Pods
               </Typography>
-              <Typography variant="caption" color="success.main">
-                {dashboardInfo.runningPods} Running
-              </Typography>
+              <Box display="flex" alignItems="center" gap={1} mt={1}>
+                <Chip
+                  label={`${dashboardInfo.runningPods} Running`}
+                  color="success"
+                  size="small"
+                />
+                {dashboardInfo.pendingPods > 0 && (
+                  <Chip
+                    label={`${dashboardInfo.pendingPods} Pending`}
+                    color="warning"
+                    size="small"
+                  />
+                )}
+                {dashboardInfo.failedPods > 0 && (
+                  <Chip
+                    label={`${dashboardInfo.failedPods} Failed`}
+                    color="error"
+                    size="small"
+                  />
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -178,6 +247,7 @@ const Dashboard: React.FC = () => {
                   variant="determinate"
                   value={dashboardInfo.resourceUsage.cpuUsagePercentage}
                   sx={{ flexGrow: 1 }}
+                  color={dashboardInfo.resourceUsage.cpuUsagePercentage > 80 ? 'error' : 'primary'}
                 />
                 <Typography variant="body2">
                   {dashboardInfo.resourceUsage.cpuUsagePercentage.toFixed(1)}%
@@ -201,6 +271,7 @@ const Dashboard: React.FC = () => {
                   variant="determinate"
                   value={dashboardInfo.resourceUsage.memoryUsagePercentage}
                   sx={{ flexGrow: 1 }}
+                  color={dashboardInfo.resourceUsage.memoryUsagePercentage > 80 ? 'error' : 'primary'}
                 />
                 <Typography variant="body2">
                   {dashboardInfo.resourceUsage.memoryUsagePercentage.toFixed(1)}%
@@ -214,31 +285,37 @@ const Dashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Namespace Pod Distribution */}
-      <Grid container spacing={3}>
+      {/* Pod Status Breakdown */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Namespace Pod Distribution
+                Pod Status Breakdown
               </Typography>
-              <TableContainer component={Paper}>
+              <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Namespace</TableCell>
-                      <TableCell align="right">Total</TableCell>
-                      <TableCell align="right">Running</TableCell>
-                      <TableCell align="right">Failed</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="right">Count</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {dashboardInfo.namespacePodDistribution.map((ns) => (
-                      <TableRow key={ns.namespace}>
-                        <TableCell>{ns.namespace}</TableCell>
-                        <TableCell align="right">{ns.podCount}</TableCell>
-                        <TableCell align="right">{ns.runningPods}</TableCell>
-                        <TableCell align="right">{ns.failedPods}</TableCell>
+                    {Object.entries(dashboardInfo.podStatusBreakdown).map(([status, count]) => (
+                      <TableRow key={status}>
+                        <TableCell>
+                          <Chip
+                            label={status}
+                            color={status === 'Running' ? 'success' : status === 'Pending' ? 'warning' : 'error'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight="medium">
+                            {count}
+                          </Typography>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -252,27 +329,93 @@ const Dashboard: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Recent Events
+                Top Namespaces by Pod Count
               </Typography>
-              <Box maxHeight={300} overflow="auto">
-                {dashboardInfo.recentEvents.slice(0, 10).map((event, index) => (
-                  <Box key={index} mb={1} p={1} bgcolor="grey.50" borderRadius={1}>
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(event.timestamp).toLocaleString()}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      {event.reason}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {event.message}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Namespace</TableCell>
+                      <TableCell align="right">Total</TableCell>
+                      <TableCell align="right">Running</TableCell>
+                      <TableCell align="right">Failed</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dashboardInfo.namespacePodDistribution.slice(0, 5).map((ns) => (
+                      <TableRow key={ns.namespace}>
+                        <TableCell>
+                          <Chip label={ns.namespace} size="small" variant="outlined" />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight="medium">
+                            {ns.podCount}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" color="success.main">
+                            {ns.runningPods}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" color="error.main">
+                            {ns.failedPods}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      {/* Recent Events */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Recent Events
+          </Typography>
+          <List>
+            {dashboardInfo.recentEvents.slice(0, 10).map((event, index) => (
+              <React.Fragment key={index}>
+                <ListItem alignItems="flex-start">
+                  <ListItemIcon>
+                    {getEventIcon(event.type)}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2" fontWeight="medium">
+                          {event.involvedObjectName}
+                        </Typography>
+                        <Chip
+                          label={event.type}
+                          color={getEventColor(event.type) as any}
+                          size="small"
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {event.message}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {event.involvedObjectKind} • {event.namespace} • {new Date(event.timestamp).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+                {index < dashboardInfo.recentEvents.length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        </CardContent>
+      </Card>
     </Box>
   );
 };

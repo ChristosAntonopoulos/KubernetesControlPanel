@@ -11,6 +11,7 @@ export interface PodInfo {
   annotations: Record<string, string>;
   restartCount: number;
   isReady: boolean;
+  ready: boolean; // Ready status for display
   requests?: ResourceRequirements;
   limits?: ResourceRequirements;
 }
