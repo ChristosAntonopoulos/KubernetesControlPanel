@@ -90,20 +90,88 @@ export interface NamespacePodCount {
 }
 
 export interface ClusterEvent {
+  name: string;
+  namespace: string;
   type: string;
   reason: string;
   message: string;
-  timestamp: string;
-  involvedObjectKind: string;
-  involvedObjectName: string;
-  namespace: string;
+  source: string;
+  firstTimestamp: string;
+  lastTimestamp: string;
+  count: number;
 }
 
 export interface ResourceUsageSummary {
+  totalCpuUsage: number;
+  totalMemoryUsage: number;
   cpuUsagePercentage: number;
   memoryUsagePercentage: number;
-  totalCpu: string;
-  totalMemory: string;
-  usedCpu: string;
-  usedMemory: string;
+  totalCpuCapacity: number;
+  totalMemoryCapacity: number;
+}
+
+// New interfaces for enhanced pod management
+
+export interface PodMetrics {
+  name: string;
+  namespace: string;
+  containers: ContainerMetrics[];
+  timestamp: string;
+  totalCpuUsage: number;
+  totalMemoryUsage: number;
+}
+
+export interface ContainerMetrics {
+  name: string;
+  cpuUsage: number;
+  memoryUsage: number;
+  cpuRequests?: number;
+  memoryRequests?: number;
+  cpuLimits?: number;
+  memoryLimits?: number;
+}
+
+export interface PodRestartResult {
+  success: boolean;
+  podName: string;
+  namespace: string;
+  preRestartLogs: string;
+  restartTimestamp: string;
+  errorMessage?: string;
+  previousPodUid?: string;
+  newPodUid?: string;
+  containerPreRestartLogs: Record<string, string>;
+}
+
+export interface PodResourceUsage {
+  timestamp: string;
+  podName: string;
+  namespace: string;
+  cpuUsage: number;
+  memoryUsage: number;
+  networkRxBytes?: number;
+  networkTxBytes?: number;
+  filesystemUsage?: number;
+  cpuUsagePercentage?: number;
+  memoryUsagePercentage?: number;
+}
+
+// Enhanced pod actions
+export interface PodAction {
+  id: string;
+  label: string;
+  icon: React.ComponentType;
+  color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+  disabled?: boolean;
+  requiresConfirmation?: boolean;
+  confirmationMessage?: string;
+}
+
+export interface LogViewerOptions {
+  namespace: string;
+  podName: string;
+  containerName?: string;
+  tailLines?: number;
+  previous?: boolean;
+  follow?: boolean;
 } 

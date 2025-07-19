@@ -1,7 +1,9 @@
 using k8s;
+using k8s.Models;
 using KubernetesControlPanel.Core.Models;
 using KubernetesControlPanel.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace KubernetesControlPanel.Services.Services;
 
@@ -59,7 +61,7 @@ public class PodService : IPodService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting pod details for {PodName} in namespace {Namespace}", podName, namespaceName);
-            return null;
+            throw;
         }
     }
 
@@ -72,7 +74,35 @@ public class PodService : IPodService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting logs for pod {PodName} in namespace {Namespace}", podName, namespaceName);
-            return $"Error retrieving logs: {ex.Message}";
+            throw;
+        }
+    }
+
+    public async Task<string> GetPodPreviousLogsAsync(string namespaceName, string podName, string? containerName = null, int? tailLines = null)
+    {
+        try
+        {
+            var logOptions = new V1PodLogOptions
+            {
+                Previous = true,
+                TailLines = tailLines
+            };
+
+            if (!string.IsNullOrEmpty(containerName))
+            {
+                logOptions.Container = containerName;
+            }
+
+            using var response = await _kubernetesClient.CoreV1.ReadNamespacedPodLogWithHttpMessagesAsync(
+                podName, namespaceName, logOptions: logOptions);
+            
+            using var reader = new StreamReader(response.Body);
+            return await reader.ReadToEndAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting previous logs for pod {PodName} in namespace {Namespace}", podName, namespaceName);
+            return string.Empty;
         }
     }
 
@@ -80,29 +110,58 @@ public class PodService : IPodService
     {
         try
         {
-            var events = await _kubernetesClient.CoreV1.ListNamespacedEventAsync(
-                namespaceName,
-                fieldSelector: $"involvedObject.name={podName},involvedObject.kind=Pod");
-
+            var events = await _kubernetesClient.CoreV1.ListNamespacedEventAsync(namespaceName);
             return events.Items
-                .OrderByDescending(e => e.LastTimestamp)
-                .Take(50)
+                .Where(e => e.InvolvedObject?.Name == podName && e.InvolvedObject?.Kind == "Pod")
                 .Select(e => new ClusterEvent
                 {
-                    Type = e.Type,
-                    Reason = e.Reason,
-                    Message = e.Message,
-                    Timestamp = e.LastTimestamp ?? DateTime.UtcNow,
-                    InvolvedObjectKind = e.InvolvedObject?.Kind ?? string.Empty,
-                    InvolvedObjectName = e.InvolvedObject?.Name ?? string.Empty,
-                    Namespace = e.InvolvedObject?.NamespaceProperty ?? string.Empty
+                    Name = e.Metadata?.Name ?? "",
+                    Namespace = e.Metadata?.NamespaceProperty ?? "",
+                    Type = e.Type ?? "",
+                    Reason = e.Reason ?? "",
+                    Message = e.Message ?? "",
+                    Source = e.Source?.Component ?? "",
+                    FirstTimestamp = e.FirstTimestamp ?? DateTime.MinValue,
+                    LastTimestamp = e.LastTimestamp ?? DateTime.MinValue,
+                    Count = e.Count ?? 0
                 })
+                .OrderByDescending(e => e.LastTimestamp)
                 .ToList();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting events for pod {PodName} in namespace {Namespace}", podName, namespaceName);
             return new List<ClusterEvent>();
+        }
+    }
+
+    public async Task<PodMetrics?> GetPodMetricsAsync(string namespaceName, string podName)
+    {
+        try
+        {
+            // Note: This requires metrics-server to be installed in the cluster
+            var metricsClient = new GenericClient(_kubernetesClient, "metrics.k8s.io", "v1beta1", "pods");
+            var metricsResponse = await metricsClient.GetNamespacedAsync<dynamic>(namespaceName, podName);
+            
+            if (metricsResponse == null) return null;
+
+            var podMetrics = new PodMetrics
+            {
+                Name = podName,
+                Namespace = namespaceName,
+                Timestamp = DateTime.UtcNow
+            };
+
+            // Parse metrics data (this is a simplified version)
+            // In a real implementation, you'd parse the actual metrics structure
+            // For now, we'll return basic structure
+            
+            return podMetrics;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not get metrics for pod {PodName} in namespace {Namespace}. Make sure metrics-server is installed.", podName, namespaceName);
+            return null;
         }
     }
 
@@ -122,6 +181,68 @@ public class PodService : IPodService
         }
     }
 
+    public async Task<PodRestartResult> RestartPodWithLogsAsync(string namespaceName, string podName)
+    {
+        var result = new PodRestartResult
+        {
+            PodName = podName,
+            Namespace = namespaceName,
+            RestartTimestamp = DateTime.UtcNow
+        };
+
+        try
+        {
+            // Get the current pod to capture its UID
+            var currentPod = await _kubernetesClient.CoreV1.ReadNamespacedPodAsync(podName, namespaceName);
+            result.PreviousPodUid = currentPod.Metadata?.Uid;
+
+            // Capture logs from all containers before restart
+            foreach (var container in currentPod.Spec?.Containers ?? new List<V1Container>())
+            {
+                try
+                {
+                    var containerLogs = await GetPodLogsAsync(namespaceName, podName, container.Name, 1000);
+                    result.ContainerPreRestartLogs[container.Name] = containerLogs;
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogWarning(logEx, "Could not capture logs for container {ContainerName} in pod {PodName}", container.Name, podName);
+                }
+            }
+
+            // Capture all logs (main container)
+            result.PreRestartLogs = await GetPodLogsAsync(namespaceName, podName, null, 1000);
+
+            // Perform the restart
+            await _kubernetesClient.CoreV1.DeleteNamespacedPodAsync(podName, namespaceName);
+
+            // Wait a bit for the new pod to be created
+            await Task.Delay(2000);
+
+            // Try to get the new pod UID
+            try
+            {
+                var newPod = await _kubernetesClient.CoreV1.ReadNamespacedPodAsync(podName, namespaceName);
+                result.NewPodUid = newPod.Metadata?.Uid;
+            }
+            catch
+            {
+                // New pod might not be ready yet, which is okay
+            }
+
+            result.Success = true;
+            _logger.LogInformation("Pod {PodName} in namespace {Namespace} restarted successfully with logs preserved", podName, namespaceName);
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "Error restarting pod {PodName} in namespace {Namespace} with log preservation", podName, namespaceName);
+        }
+
+        return result;
+    }
+
     public async Task<bool> DeletePodAsync(string namespaceName, string podName)
     {
         try
@@ -134,6 +255,42 @@ public class PodService : IPodService
         {
             _logger.LogError(ex, "Error deleting pod {PodName} in namespace {Namespace}", podName, namespaceName);
             return false;
+        }
+    }
+
+    public async Task<List<PodResourceUsage>> GetPodResourceHistoryAsync(string namespaceName, string podName, int hours = 24)
+    {
+        try
+        {
+            // This is a simplified implementation
+            // In a real scenario, you would store metrics in a time-series database
+            // For now, we'll return a simulated history
+            var history = new List<PodResourceUsage>();
+            var endTime = DateTime.UtcNow;
+            var startTime = endTime.AddHours(-hours);
+
+            // Simulate historical data (replace with actual metrics storage)
+            for (var time = startTime; time <= endTime; time = time.AddMinutes(5))
+            {
+                var usage = new PodResourceUsage
+                {
+                    Timestamp = time,
+                    PodName = podName,
+                    Namespace = namespaceName,
+                    CpuUsage = Random.Shared.Next(100, 500), // millicores
+                    MemoryUsage = Random.Shared.Next(100 * 1024 * 1024, 500 * 1024 * 1024), // bytes
+                    CpuUsagePercentage = Random.Shared.NextDouble() * 100,
+                    MemoryUsagePercentage = Random.Shared.NextDouble() * 100
+                };
+                history.Add(usage);
+            }
+
+            return history.OrderBy(h => h.Timestamp).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting resource history for pod {PodName} in namespace {Namespace}", podName, namespaceName);
+            return new List<PodResourceUsage>();
         }
     }
 } 
