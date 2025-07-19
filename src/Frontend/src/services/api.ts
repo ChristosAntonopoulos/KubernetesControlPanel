@@ -1,5 +1,15 @@
 import axios from 'axios';
-import { DashboardInfo, PodInfo, NodeInfo, ClusterEvent, ResourceUsageSummary, NamespacePodCount } from '../types';
+import { 
+  DashboardInfo, 
+  PodInfo, 
+  NodeInfo, 
+  ClusterEvent, 
+  ResourceUsageSummary, 
+  NamespacePodCount,
+  PodMetrics,
+  PodRestartResult,
+  PodResourceUsage
+} from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
@@ -46,12 +56,32 @@ export const podsApi = {
     const response = await api.get(`/pods/${namespace}/${podName}/logs?${params.toString()}`);
     return response.data;
   },
+  getPreviousLogs: async (namespace: string, podName: string, containerName?: string, tailLines?: number): Promise<string> => {
+    const params = new URLSearchParams();
+    if (containerName) params.append('containerName', containerName);
+    if (tailLines) params.append('tailLines', tailLines.toString());
+    
+    const response = await api.get(`/pods/${namespace}/${podName}/logs/previous?${params.toString()}`);
+    return response.data;
+  },
   getEvents: async (namespace: string, podName: string): Promise<ClusterEvent[]> => {
     const response = await api.get(`/pods/${namespace}/${podName}/events`);
     return response.data;
   },
+  getMetrics: async (namespace: string, podName: string): Promise<PodMetrics | null> => {
+    const response = await api.get(`/pods/${namespace}/${podName}/metrics`);
+    return response.data;
+  },
+  getResourceHistory: async (namespace: string, podName: string, hours: number = 24): Promise<PodResourceUsage[]> => {
+    const response = await api.get(`/pods/${namespace}/${podName}/metrics/history?hours=${hours}`);
+    return response.data;
+  },
   restart: async (namespace: string, podName: string): Promise<boolean> => {
     const response = await api.post(`/pods/${namespace}/${podName}/restart`);
+    return response.data;
+  },
+  restartWithLogs: async (namespace: string, podName: string): Promise<PodRestartResult> => {
+    const response = await api.post(`/pods/${namespace}/${podName}/restart-with-logs`);
     return response.data;
   },
   delete: async (namespace: string, podName: string): Promise<boolean> => {
