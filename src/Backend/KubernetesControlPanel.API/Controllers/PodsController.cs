@@ -50,7 +50,6 @@ public class PodsController : ControllerBase
     /// <returns>List of pods in the namespace</returns>
     [HttpGet("{namespaceName}")]
     [ProducesResponseType(typeof(List<PodInfo>), 200)]
-    [ProducesResponseType(404)]
     [ProducesResponseType(500)]
     public async Task<ActionResult<List<PodInfo>>> GetPodsByNamespace(string namespaceName)
     {
@@ -62,7 +61,7 @@ public class PodsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting pods for namespace {Namespace}", namespaceName);
-            return StatusCode(500, new { error = "Failed to retrieve pods for namespace" });
+            return StatusCode(500, new { error = "Failed to retrieve pods" });
         }
     }
 
@@ -89,7 +88,7 @@ public class PodsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting pod details for {PodName} in namespace {Namespace}", podName, namespaceName);
+            _logger.LogError(ex, "Error getting details for pod {PodName} in namespace {Namespace}", podName, namespaceName);
             return StatusCode(500, new { error = "Failed to retrieve pod details" });
         }
     }
@@ -125,6 +124,36 @@ public class PodsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets pod logs from previous container instance
+    /// </summary>
+    /// <param name="namespaceName">Namespace name</param>
+    /// <param name="podName">Pod name</param>
+    /// <param name="containerName">Container name (optional)</param>
+    /// <param name="tailLines">Number of lines to retrieve (optional)</param>
+    /// <returns>Previous pod logs</returns>
+    [HttpGet("{namespaceName}/{podName}/logs/previous")]
+    [ProducesResponseType(typeof(string), 200)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<string>> GetPodPreviousLogs(
+        string namespaceName, 
+        string podName, 
+        [FromQuery] string? containerName = null,
+        [FromQuery] int? tailLines = null)
+    {
+        try
+        {
+            var logs = await _podService.GetPodPreviousLogsAsync(namespaceName, podName, containerName, tailLines);
+            return Ok(logs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting previous logs for pod {PodName} in namespace {Namespace}", podName, namespaceName);
+            return StatusCode(500, new { error = "Failed to retrieve previous pod logs" });
+        }
+    }
+
+    /// <summary>
     /// Gets pod events
     /// </summary>
     /// <param name="namespaceName">Namespace name</param>
@@ -148,6 +177,57 @@ public class PodsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets pod metrics (CPU and memory usage)
+    /// </summary>
+    /// <param name="namespaceName">Namespace name</param>
+    /// <param name="podName">Pod name</param>
+    /// <returns>Pod metrics</returns>
+    [HttpGet("{namespaceName}/{podName}/metrics")]
+    [ProducesResponseType(typeof(PodMetrics), 200)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<PodMetrics?>> GetPodMetrics(string namespaceName, string podName)
+    {
+        try
+        {
+            var metrics = await _podService.GetPodMetricsAsync(namespaceName, podName);
+            return Ok(metrics);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting metrics for pod {PodName} in namespace {Namespace}", podName, namespaceName);
+            return StatusCode(500, new { error = "Failed to retrieve pod metrics" });
+        }
+    }
+
+    /// <summary>
+    /// Gets pod resource usage history
+    /// </summary>
+    /// <param name="namespaceName">Namespace name</param>
+    /// <param name="podName">Pod name</param>
+    /// <param name="hours">Number of hours of history to retrieve (default: 24)</param>
+    /// <returns>Pod resource usage history</returns>
+    [HttpGet("{namespaceName}/{podName}/metrics/history")]
+    [ProducesResponseType(typeof(List<PodResourceUsage>), 200)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<List<PodResourceUsage>>> GetPodResourceHistory(
+        string namespaceName, 
+        string podName,
+        [FromQuery] int hours = 24)
+    {
+        try
+        {
+            var history = await _podService.GetPodResourceHistoryAsync(namespaceName, podName, hours);
+            return Ok(history);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting resource history for pod {PodName} in namespace {Namespace}", podName, namespaceName);
+            return StatusCode(500, new { error = "Failed to retrieve pod resource history" });
+        }
+    }
+
+    /// <summary>
     /// Restarts a pod
     /// </summary>
     /// <param name="namespaceName">Namespace name</param>
@@ -167,6 +247,29 @@ public class PodsController : ControllerBase
         {
             _logger.LogError(ex, "Error restarting pod {PodName} in namespace {Namespace}", podName, namespaceName);
             return StatusCode(500, new { error = "Failed to restart pod" });
+        }
+    }
+
+    /// <summary>
+    /// Restarts a pod and preserves logs from before restart
+    /// </summary>
+    /// <param name="namespaceName">Namespace name</param>
+    /// <param name="podName">Pod name</param>
+    /// <returns>Restart result with preserved logs</returns>
+    [HttpPost("{namespaceName}/{podName}/restart-with-logs")]
+    [ProducesResponseType(typeof(PodRestartResult), 200)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<PodRestartResult>> RestartPodWithLogs(string namespaceName, string podName)
+    {
+        try
+        {
+            var result = await _podService.RestartPodWithLogsAsync(namespaceName, podName);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error restarting pod with logs for {PodName} in namespace {Namespace}", podName, namespaceName);
+            return StatusCode(500, new { error = "Failed to restart pod with log preservation" });
         }
     }
 
