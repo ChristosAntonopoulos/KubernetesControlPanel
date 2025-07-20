@@ -115,17 +115,15 @@ public class PodService : IPodService
                 .Where(e => e.InvolvedObject?.Name == podName && e.InvolvedObject?.Kind == "Pod")
                 .Select(e => new ClusterEvent
                 {
-                    Name = e.Metadata?.Name ?? "",
-                    Namespace = e.Metadata?.NamespaceProperty ?? "",
                     Type = e.Type ?? "",
                     Reason = e.Reason ?? "",
                     Message = e.Message ?? "",
-                    Source = e.Source?.Component ?? "",
-                    FirstTimestamp = e.FirstTimestamp ?? DateTime.MinValue,
-                    LastTimestamp = e.LastTimestamp ?? DateTime.MinValue,
-                    Count = e.Count ?? 0
+                    Timestamp = e.LastTimestamp ?? DateTime.MinValue,
+                    InvolvedObjectKind = e.InvolvedObject?.Kind ?? "",
+                    InvolvedObjectName = e.InvolvedObject?.Name ?? "",
+                    Namespace = e.Metadata?.NamespaceProperty ?? ""
                 })
-                .OrderByDescending(e => e.LastTimestamp)
+                .OrderByDescending(e => e.Timestamp)
                 .ToList();
         }
         catch (Exception ex)
@@ -135,26 +133,24 @@ public class PodService : IPodService
         }
     }
 
-    public async Task<PodMetrics?> GetPodMetricsAsync(string namespaceName, string podName)
+    public async Task<KubernetesControlPanel.Core.Models.PodMetrics?> GetPodMetricsAsync(string namespaceName, string podName)
     {
         try
         {
             // Note: This requires metrics-server to be installed in the cluster
-            var metricsClient = new GenericClient(_kubernetesClient, "metrics.k8s.io", "v1beta1", "pods");
-            var metricsResponse = await metricsClient.GetNamespacedAsync<dynamic>(namespaceName, podName);
-            
-            if (metricsResponse == null) return null;
-
-            var podMetrics = new PodMetrics
+            // For now, return a basic metrics structure since metrics-server integration is complex
+            var podMetrics = new KubernetesControlPanel.Core.Models.PodMetrics
             {
                 Name = podName,
                 Namespace = namespaceName,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                Containers = new List<KubernetesControlPanel.Core.Models.ContainerMetrics>()
             };
 
-            // Parse metrics data (this is a simplified version)
-            // In a real implementation, you'd parse the actual metrics structure
-            // For now, we'll return basic structure
+            // In a real implementation, you would:
+            // 1. Use the metrics.k8s.io API
+            // 2. Parse the actual metrics data
+            // 3. Populate CPU and memory usage
             
             return podMetrics;
         }
