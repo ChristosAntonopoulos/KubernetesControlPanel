@@ -39,7 +39,6 @@ import {
   Error as ErrorIcon,
   CheckCircle as CheckCircleIcon,
   Event as EventIcon,
-  Container as ContainerIcon,
   Label as LabelIcon,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';

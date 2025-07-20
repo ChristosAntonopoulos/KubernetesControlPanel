@@ -91,24 +91,22 @@ export interface NamespacePodCount {
 }
 
 export interface ClusterEvent {
-  name: string;
-  namespace: string;
   type: string;
   reason: string;
   message: string;
-  source: string;
-  firstTimestamp: string;
-  lastTimestamp: string;
-  count: number;
+  timestamp: string;
+  involvedObjectKind: string;
+  involvedObjectName: string;
+  namespace: string;
 }
 
 export interface ResourceUsageSummary {
-  totalCpuUsage: number;
-  totalMemoryUsage: number;
   cpuUsagePercentage: number;
   memoryUsagePercentage: number;
-  totalCpuCapacity: number;
-  totalMemoryCapacity: number;
+  totalCpu: string;
+  totalMemory: string;
+  usedCpu: string;
+  usedMemory: string;
 }
 
 // New interfaces for enhanced pod management
@@ -136,12 +134,10 @@ export interface PodRestartResult {
   success: boolean;
   podName: string;
   namespace: string;
-  preRestartLogs: string;
   restartTimestamp: string;
-  errorMessage?: string;
+  message?: string;
   previousPodUid?: string;
   newPodUid?: string;
-  containerPreRestartLogs: Record<string, string>;
 }
 
 export interface PodResourceUsage {

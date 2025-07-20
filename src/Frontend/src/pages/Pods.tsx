@@ -207,13 +207,13 @@ const Pods: React.FC = () => {
     
     setIsRestarting(true);
     try {
-      const result: PodRestartResult = await podsApi.restart(selectedPod.namespace, selectedPod.name);
+      const result = await podsApi.restart(selectedPod.namespace, selectedPod.name);
       
-      if (result.success) {
+      if (result) {
         showSnackbar(`Pod restarted successfully${withLogs ? ' with logs' : ''}`, 'success');
         queryClient.invalidateQueries({ queryKey: ['pods'] });
       } else {
-        showSnackbar(result.message || 'Failed to restart pod', 'error');
+        showSnackbar('Failed to restart pod', 'error');
       }
     } catch (error) {
       showSnackbar('Failed to restart pod', 'error');
@@ -264,7 +264,7 @@ const Pods: React.FC = () => {
       case 'failed':
         return <ErrorIcon color="error" />;
       case 'succeeded':
-        return <CheckCircle color="info" />;
+        return <ReadyIcon color="info" />;
       default:
         return <InfoIcon />;
     }
