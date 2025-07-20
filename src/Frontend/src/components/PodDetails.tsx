@@ -277,7 +277,7 @@ const PodDetails: React.FC<PodDetailsProps> = ({ open, onClose, pod }) => {
                 <Card>
                   <CardContent>
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <ContainerIcon />
+                      <InfoIcon />
                       <Typography variant="h6">{container.name}</Typography>
                       <Chip 
                         label={container.status} 
@@ -326,38 +326,38 @@ const PodDetails: React.FC<PodDetailsProps> = ({ open, onClose, pod }) => {
           ) : events && events.length > 0 ? (
             <TableContainer component={Paper}>
               <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Reason</TableCell>
-                    <TableCell>Message</TableCell>
-                    <TableCell>Source</TableCell>
-                    <TableCell>Count</TableCell>
-                    <TableCell>Last Seen</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {events.map((event, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          {getEventIcon(event.type, event.reason)}
-                          <Chip 
-                            label={event.type} 
-                            color={event.type === 'Warning' ? 'warning' : 'default'}
-                            size="small"
-                          />
-                        </Box>
-                      </TableCell>
-                      <TableCell>{event.reason}</TableCell>
-                      <TableCell sx={{ maxWidth: 300, wordBreak: 'break-word' }}>
-                        {event.message}
-                      </TableCell>
-                      <TableCell>{event.source}</TableCell>
-                      <TableCell>{event.count}</TableCell>
-                      <TableCell>{formatTimestamp(event.lastTimestamp)}</TableCell>
+                                  <TableHead>
+                    <TableRow>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Reason</TableCell>
+                      <TableCell>Message</TableCell>
+                      <TableCell>Object</TableCell>
+                      <TableCell>Namespace</TableCell>
+                      <TableCell>Timestamp</TableCell>
                     </TableRow>
-                  ))}
+                  </TableHead>
+                  <TableBody>
+                    {events.map((event, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            {getEventIcon(event.type, event.reason)}
+                            <Chip 
+                              label={event.type} 
+                              color={event.type === 'Warning' ? 'warning' : 'default'}
+                              size="small"
+                            />
+                          </Box>
+                        </TableCell>
+                        <TableCell>{event.reason}</TableCell>
+                        <TableCell sx={{ maxWidth: 300, wordBreak: 'break-word' }}>
+                          {event.message}
+                        </TableCell>
+                        <TableCell>{event.involvedObjectName}</TableCell>
+                        <TableCell>{event.namespace}</TableCell>
+                        <TableCell>{formatTimestamp(event.timestamp)}</TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </TableContainer>
