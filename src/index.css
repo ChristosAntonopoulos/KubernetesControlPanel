@@ -26,12 +26,12 @@ code {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #a855f7;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #9333ea;
 }
 
 /* Custom styles */
@@ -47,7 +47,7 @@ code {
 }
 
 .metrics-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
 }
 
 .status-running {

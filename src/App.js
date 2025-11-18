@@ -92,7 +92,7 @@ function AppContent() {
                     to={item.href}
                     className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       item.current
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-radiant-purple-600 text-white'
                         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     }`}
                   >

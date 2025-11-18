@@ -112,7 +112,7 @@ const PodDetails = () => {
       case 'Failed':
         return <AlertCircle className="h-5 w-5 text-red-500" />;
       case 'Succeeded':
-        return <CheckCircle className="h-5 w-5 text-blue-500" />;
+        return <CheckCircle className="h-5 w-5 text-radiant-purple-500" />;
       default:
         return <AlertCircle className="h-5 w-5 text-gray-500" />;
     }
@@ -128,7 +128,7 @@ const PodDetails = () => {
       case 'Failed':
         return `${baseClasses} bg-red-100 text-red-800`;
       case 'Succeeded':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
+        return `${baseClasses} bg-radiant-purple-100 text-radiant-purple-800`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
     }
@@ -137,7 +137,7 @@ const PodDetails = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-radiant-purple-600"></div>
       </div>
     );
   }
@@ -239,7 +239,7 @@ const PodDetails = () => {
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Cpu className="h-6 w-6 text-blue-400" />
+                  <Cpu className="h-6 w-6 text-radiant-purple-400" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
@@ -347,7 +347,7 @@ const PodDetails = () => {
                   {Object.entries(pod.metadata.labels).map(([key, value]) => (
                     <span
                       key={key}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-radiant-purple-100 text-radiant-purple-800"
                     >
                       {key}: {value}
                     </span>
