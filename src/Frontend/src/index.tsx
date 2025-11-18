@@ -19,10 +19,39 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
+      main: '#8B5CF6', // Radiant purple 🟣
+      light: '#A78BFA',
+      dark: '#7C3AED',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#C084FC', // Lighter purple accent
+      light: '#E9D5FF',
+      dark: '#9333EA',
+    },
+    background: {
+      default: '#FAFAFA',
+      paper: '#FFFFFF',
+    },
+  },
+  components: {
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          background: 'linear-gradient(135deg, #8B5CF6 0%, #9333EA 100%)',
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(139, 92, 246, 0.12)',
+            '&:hover': {
+              backgroundColor: 'rgba(139, 92, 246, 0.20)',
+            },
+          },
+        },
+      },
     },
   },
 });
