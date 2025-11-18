@@ -68,7 +68,7 @@ const Dashboard = () => {
       .slice(0, 10);
   };
 
-  const pieColors = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#6B7280'];
+  const pieColors = ['#a855f7', '#c084fc', '#d8b4fe', '#9333ea', '#7e22ce'];
   const statusCounts = getStatusCounts();
   const namespaceStats = getNamespaceStats();
   const recentEvents = getRecentEvents();
@@ -76,7 +76,7 @@ const Dashboard = () => {
   if (loading && dashboardData.pods.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-radiant-purple-600"></div>
       </div>
     );
   }
@@ -209,7 +209,7 @@ const Dashboard = () => {
               <XAxis dataKey="namespace" angle={-45} textAnchor="end" height={80} />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="count" fill="#3B82F6" />
+              <Bar dataKey="count" fill="#9333ea" />
             </BarChart>
           </ResponsiveContainer>
         </div>

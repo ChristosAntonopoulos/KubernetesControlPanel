@@ -140,7 +140,7 @@ const Metrics = () => {
   if (loading && pods.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-radiant-purple-600"></div>
       </div>
     );
   }
@@ -158,7 +158,7 @@ const Metrics = () => {
           </div>
           <button
             onClick={fetchMetrics}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-radiant-purple-600 hover:bg-radiant-purple-700"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -173,7 +173,7 @@ const Metrics = () => {
           <select
             value={selectedNamespace}
             onChange={(e) => setSelectedNamespace(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500"
           >
             <option value="all">All Namespaces</option>
             {namespaces.map(ns => (
@@ -201,7 +201,7 @@ const Metrics = () => {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Cpu className="h-6 w-6 text-blue-400" />
+                <Cpu className="h-6 w-6 text-radiant-purple-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -347,7 +347,7 @@ const Metrics = () => {
                         <div className="flex items-center">
                           <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
                             <div 
-                              className="bg-blue-600 h-2 rounded-full" 
+                              className="bg-radiant-purple-600 h-2 rounded-full" 
                               style={{ width: `${Math.min(100, parseFloat(node.cpuPercent) || 0)}%` }}
                             ></div>
                           </div>

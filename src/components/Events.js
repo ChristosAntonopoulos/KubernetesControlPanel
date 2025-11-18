@@ -65,7 +65,7 @@ const Events = () => {
         }
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       default:
-        return <Info className="h-5 w-5 text-blue-500" />;
+        return <Info className="h-5 w-5 text-radiant-purple-500" />;
     }
   };
 
@@ -77,7 +77,7 @@ const Events = () => {
       case 'Normal':
         return `${baseClasses} bg-green-100 text-green-800`;
       default:
-        return `${baseClasses} bg-blue-100 text-blue-800`;
+        return `${baseClasses} bg-radiant-purple-100 text-radiant-purple-800`;
     }
   };
 
@@ -113,7 +113,7 @@ const Events = () => {
   if (loading && events.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-radiant-purple-600"></div>
       </div>
     );
   }
@@ -145,7 +145,7 @@ const Events = () => {
           </div>
           <button
             onClick={fetchEvents}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-radiant-purple-600 hover:bg-radiant-purple-700"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -159,7 +159,7 @@ const Events = () => {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Info className="h-6 w-6 text-blue-400" />
+                <Info className="h-6 w-6 text-radiant-purple-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -229,7 +229,7 @@ const Events = () => {
             <select
               value={selectedNamespace}
               onChange={(e) => setSelectedNamespace(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500 sm:text-sm"
             >
               <option value="all">All Namespaces</option>
               {namespaces.map(ns => (
@@ -244,7 +244,7 @@ const Events = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500 sm:text-sm"
             >
               <option value="all">All Types</option>
               <option value="Warning">Warning</option>

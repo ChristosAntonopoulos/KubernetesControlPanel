@@ -143,7 +143,7 @@ const KubectlTerminal = () => {
   const getItemIcon = (type) => {
     switch (type) {
       case 'command':
-        return <Terminal className="h-4 w-4 text-blue-400" />;
+        return <Terminal className="h-4 w-4 text-radiant-purple-400" />;
       case 'output':
         return <CheckCircle className="h-4 w-4 text-green-400" />;
       case 'error':
@@ -245,7 +245,7 @@ const KubectlTerminal = () => {
                 {getItemIcon(item.type)}
                 <div className="flex-1">
                   {item.type === 'command' && (
-                    <div className="text-blue-400">
+                    <div className="text-radiant-purple-400">
                       <span className="text-gray-500">[{item.timestamp}]</span> $ kubectl {item.content}
                     </div>
                   )}
@@ -290,7 +290,7 @@ const KubectlTerminal = () => {
         <div className="bg-gray-800 px-4 py-3 border-t border-gray-700">
           <div className="flex items-center space-x-2">
             <span className="text-green-400 font-mono">$</span>
-            <span className="text-blue-400 font-mono">kubectl</span>
+            <span className="text-radiant-purple-400 font-mono">kubectl</span>
             <input
               ref={inputRef}
               type="text"
@@ -304,7 +304,7 @@ const KubectlTerminal = () => {
             <button
               onClick={executeCommand}
               disabled={!command.trim() || loading}
-              className="text-blue-400 hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-radiant-purple-400 hover:text-radiant-purple-300 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Execute Command"
             >
               <Send className="h-4 w-4" />
@@ -317,12 +317,12 @@ const KubectlTerminal = () => {
       </div>
 
       {/* Help */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+      <div className="bg-radiant-purple-50 border border-radiant-purple-200 rounded-md p-4">
         <div className="flex">
-          <Info className="h-5 w-5 text-blue-400" />
+          <Info className="h-5 w-5 text-radiant-purple-400" />
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">Security Notice</h3>
-            <div className="mt-2 text-sm text-blue-700">
+            <h3 className="text-sm font-medium text-radiant-purple-800">Security Notice</h3>
+            <div className="mt-2 text-sm text-radiant-purple-700">
               <p>For security reasons, only read operations are allowed in this terminal.</p>
               <p className="mt-1">
                 Permitted commands: <code>get</code>, <code>describe</code>, <code>logs</code>, <code>top</code>, <code>version</code>, <code>cluster-info</code>

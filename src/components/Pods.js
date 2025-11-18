@@ -117,7 +117,7 @@ const Pods = () => {
       case 'Failed':
         return <XCircle className="h-5 w-5 text-red-500" />;
       case 'Succeeded':
-        return <CheckCircle className="h-5 w-5 text-blue-500" />;
+        return <CheckCircle className="h-5 w-5 text-radiant-purple-500" />;
       default:
         return <AlertCircle className="h-5 w-5 text-gray-500" />;
     }
@@ -133,7 +133,7 @@ const Pods = () => {
       case 'Failed':
         return `${baseClasses} bg-red-100 text-red-800`;
       case 'Succeeded':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
+        return `${baseClasses} bg-radiant-purple-100 text-radiant-purple-800`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
     }
@@ -149,7 +149,7 @@ const Pods = () => {
   if (loading && pods.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-radiant-purple-600"></div>
       </div>
     );
   }
@@ -181,7 +181,7 @@ const Pods = () => {
           </div>
           <button
             onClick={fetchPods}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-radiant-purple-600 hover:bg-radiant-purple-700"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -198,7 +198,7 @@ const Pods = () => {
             <select
               value={selectedNamespace}
               onChange={(e) => setSelectedNamespace(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500 sm:text-sm"
             >
               <option value="all">All Namespaces</option>
               {namespaces.map(ns => (
@@ -213,7 +213,7 @@ const Pods = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500 sm:text-sm"
             >
               <option value="all">All Statuses</option>
               <option value="Running">Running</option>
@@ -309,7 +309,7 @@ const Pods = () => {
                   <div className="flex items-center justify-end space-x-2">
                     <Link
                       to={`/pod/${pod.namespace}/${pod.name}`}
-                      className="text-blue-600 hover:text-blue-900 p-1"
+                      className="text-radiant-purple-600 hover:text-radiant-purple-900 p-1"
                       title="View Details"
                     >
                       <Eye className="h-4 w-4" />

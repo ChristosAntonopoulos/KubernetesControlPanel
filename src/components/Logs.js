@@ -236,7 +236,7 @@ const Logs = () => {
               <select
                 value={selectedNamespace}
                 onChange={(e) => setSelectedNamespace(e.target.value)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500"
               >
                 {namespaces.map(ns => (
                   <option key={ns.name} value={ns.name}>{ns.name}</option>
@@ -249,7 +249,7 @@ const Logs = () => {
               <select
                 value={selectedPod}
                 onChange={(e) => setSelectedPod(e.target.value)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500"
               >
                 <option value="">Select a pod...</option>
                 {pods.map(pod => (
@@ -264,7 +264,7 @@ const Logs = () => {
                 <select
                   value={selectedContainer}
                   onChange={(e) => setSelectedContainer(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500"
                 >
                   {selectedPodData.containers.map(container => (
                     <option key={container} value={container}>{container}</option>
@@ -281,7 +281,7 @@ const Logs = () => {
               <select
                 value={lineCount}
                 onChange={(e) => setLineCount(Number(e.target.value))}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500"
               >
                 <option value={50}>50 lines</option>
                 <option value={100}>100 lines</option>
@@ -296,7 +296,7 @@ const Logs = () => {
                   type="checkbox"
                   checked={showPrevious}
                   onChange={(e) => setShowPrevious(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-radiant-purple-600 shadow-sm focus:border-radiant-purple-500 focus:ring-radiant-purple-500"
                 />
                 <span className="ml-2 text-sm text-gray-700">Show previous logs</span>
               </label>
@@ -327,7 +327,7 @@ const Logs = () => {
           <button
             onClick={fetchStaticLogs}
             disabled={!selectedPod || loading}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-radiant-purple-600 hover:bg-radiant-purple-700 disabled:opacity-50"
           >
             <FileText className="h-4 w-4 mr-2" />
             {loading ? 'Loading...' : 'Fetch Logs'}
