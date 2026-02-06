@@ -84,6 +84,9 @@ stages:
         kubectl apply -f k8s/ingress.yaml
       displayName: 'Apply Kubernetes manifests'
 
+    - script: 'kubectl rollout restart deployment/k8s-control-panel -n $(kubernetesNamespace)'
+      displayName: 'Restart deployment to pull latest image'
+
     - script: 'kubectl rollout status deployment/k8s-control-panel -n $(kubernetesNamespace) --timeout=600s'
       displayName: 'Wait for deployment rollout'
 

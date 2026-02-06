@@ -57,7 +57,7 @@ import {
   History as HistoryIcon,
   Event as EventIcon,
 } from '@mui/icons-material';
-import { podsApi, namespacesApi } from '../services/api';
+import { podsApi, namespacesApi, nodesApi } from '../services/api';
 import { PodInfo, PodRestartResult } from '../types';
 import { SYSTEM_NAMESPACES, PODS_HIDE_SYSTEM_STORAGE_KEY } from '../constants';
 import LogViewer from '../components/LogViewer';
@@ -115,6 +115,20 @@ const Pods: React.FC = () => {
     queryFn: () => selectedNamespace === 'all' ? podsApi.getAll() : podsApi.getByNamespace(selectedNamespace),
     refetchInterval: 30000,
   });
+
+  const { data: nodes } = useQuery({
+    queryKey: ['nodes'],
+    queryFn: nodesApi.getAll,
+  });
+
+  const nodeToExternalIP = React.useMemo(() => {
+    const map: Record<string, string> = {};
+    nodes?.forEach((node) => {
+      const ip = node.externalIP || node.internalIP;
+      if (ip) map[node.name] = ip;
+    });
+    return map;
+  }, [nodes]);
 
   const deletePodMutation = useMutation({
     mutationFn: ({ namespace, name }: { namespace: string; name: string }) =>
@@ -444,6 +458,7 @@ const Pods: React.FC = () => {
               <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Pod IP</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Containers</TableCell>
               <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Node</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>External IP</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Ready</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Restarts</TableCell>
               <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Age</TableCell>
@@ -509,6 +524,17 @@ const Pods: React.FC = () => {
                   {pod.containers?.length ?? 0}
                 </TableCell>
                 <TableCell sx={{ fontSize: '0.8rem' }}>{pod.nodeName || '-'}</TableCell>
+                <TableCell sx={{ fontSize: '0.8rem' }}>
+                  {pod.nodeName && nodeToExternalIP[pod.nodeName] ? (
+                    <Tooltip title={nodeToExternalIP[pod.nodeName]}>
+                      <Typography variant="caption" component="span" sx={{ fontFamily: 'monospace' }}>
+                        {nodeToExternalIP[pod.nodeName]}
+                      </Typography>
+                    </Tooltip>
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
                 <TableCell align="center" sx={{ fontSize: '0.8rem' }}>
                   <Chip
                     label={pod.isReady ? 'Yes' : 'No'}
