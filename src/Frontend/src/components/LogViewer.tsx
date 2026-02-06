@@ -266,7 +266,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ open, onClose, pod, initialOption
             sx={{ 
               height: '50vh', 
               overflow: 'auto', 
-              backgroundColor: '#1e1e1e',
+              backgroundColor: 'background.default',
               fontFamily: 'monospace',
               fontSize: '12px',
               p: 1

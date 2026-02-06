@@ -36,6 +36,8 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   MoreVert as MoreIcon,
@@ -57,13 +59,23 @@ import {
 } from '@mui/icons-material';
 import { podsApi, namespacesApi } from '../services/api';
 import { PodInfo, PodRestartResult } from '../types';
+import { SYSTEM_NAMESPACES, PODS_HIDE_SYSTEM_STORAGE_KEY } from '../constants';
 import LogViewer from '../components/LogViewer';
 import PodMetrics from '../components/PodMetrics';
 import PodDetails from '../components/PodDetails';
 
+const getInitialHideSystemPods = (): boolean => {
+  try {
+    return localStorage.getItem(PODS_HIDE_SYSTEM_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
 const Pods: React.FC = () => {
   const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [hideSystemPods, setHideSystemPods] = useState<boolean>(getInitialHideSystemPods);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedPod, setSelectedPod] = useState<PodInfo | null>(null);
   
@@ -275,11 +287,29 @@ const Pods: React.FC = () => {
     pod.namespace.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const displayedPods = hideSystemPods
+    ? filteredPods.filter(pod => !SYSTEM_NAMESPACES.includes(pod.namespace))
+    : filteredPods;
+
+  const systemPodsHiddenCount = hideSystemPods
+    ? filteredPods.filter(pod => SYSTEM_NAMESPACES.includes(pod.namespace)).length
+    : 0;
+
+  const handleHideSystemPodsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = event.target.checked;
+    setHideSystemPods(checked);
+    try {
+      localStorage.setItem(PODS_HIDE_SYSTEM_STORAGE_KEY, String(checked));
+    } catch {
+      // ignore
+    }
+  };
+
   const podStats = {
-    total: filteredPods.length,
-    running: filteredPods.filter(p => p.status.toLowerCase() === 'running').length,
-    pending: filteredPods.filter(p => p.status.toLowerCase() === 'pending').length,
-    failed: filteredPods.filter(p => p.status.toLowerCase() === 'failed').length,
+    total: displayedPods.length,
+    running: displayedPods.filter(p => p.status.toLowerCase() === 'running').length,
+    pending: displayedPods.filter(p => p.status.toLowerCase() === 'pending').length,
+    failed: displayedPods.filter(p => p.status.toLowerCase() === 'failed').length,
   };
 
   if (isLoading) {
@@ -368,66 +398,127 @@ const Pods: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={hideSystemPods}
+                  onChange={handleHideSystemPodsChange}
+                  size="small"
+                />
+              }
+              label="Hide system pods"
+            />
             <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
-              {filteredPods.length} pod(s) found
+              {displayedPods.length} pod(s) found
+              {hideSystemPods && systemPodsHiddenCount > 0 && (
+                <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
+                  ({systemPodsHiddenCount} system pods hidden)
+                </Typography>
+              )}
             </Typography>
           </Box>
         </CardContent>
       </Card>
 
-      {/* Pods Table */}
-      <TableContainer component={Paper}>
-        <Table>
+      {/* Pods Table or Empty State */}
+      {displayedPods.length === 0 ? (
+        <Card>
+          <CardContent sx={{ py: 6, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              No pods match your filters
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
+              Try clearing the search, choosing a different namespace, or unchecking &quot;Hide system pods&quot; to see more results.
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+      <TableContainer component={Paper} sx={{ fontSize: '0.8rem' }}>
+        <Table size="small">
           <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Namespace</TableCell>
-              <TableCell>Ready</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Phase</TableCell>
-              <TableCell>Node</TableCell>
-              <TableCell align="center">Ready</TableCell>
-              <TableCell align="center">Restarts</TableCell>
-              <TableCell>Age</TableCell>
-              <TableCell align="center">Actions</TableCell>
+            <TableRow sx={{ backgroundColor: 'background.default' }}>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Namespace</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Phase</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Pod IP</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Containers</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Node</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Ready</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Restarts</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Age</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredPods.map((pod) => (
+            {displayedPods.map((pod) => (
               <TableRow key={`${pod.namespace}-${pod.name}`} hover>
-                <TableCell>
+                <TableCell sx={{ fontSize: '0.8rem' }}>
                   <Box display="flex" alignItems="center" gap={1}>
                     {getPhaseIcon(pod.phase, pod.status)}
-                    <Typography variant="body2" fontWeight="medium">
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => {
+                        setSelectedPod(pod);
+                        setDetailsOpen(true);
+                      }}
+                      sx={{
+                        minWidth: 0,
+                        p: 0,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        color: 'primary.main',
+                        '&:hover': { textDecoration: 'underline', backgroundColor: 'transparent' },
+                      }}
+                    >
                       {pod.name}
-                    </Typography>
+                    </Button>
                   </Box>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ fontSize: '0.8rem' }}>
                   <Chip 
                     label={pod.namespace} 
                     size="small" 
                     variant="outlined"
+                    sx={{ fontSize: '0.75rem' }}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ fontSize: '0.8rem' }}>
                   <Chip
                     label={pod.status}
                     color={getStatusColor(pod.status) as any}
                     size="small"
+                    sx={{ fontSize: '0.75rem' }}
                   />
                 </TableCell>
-                <TableCell>{pod.phase}</TableCell>
-                <TableCell>{pod.nodeName || '-'}</TableCell>
-                <TableCell align="center">
+                <TableCell sx={{ fontSize: '0.8rem' }}>{pod.phase}</TableCell>
+                <TableCell sx={{ fontSize: '0.8rem' }}>
+                  {pod.podIP ? (
+                    <Tooltip title={pod.podIP}>
+                      <Typography variant="caption" component="span" sx={{ fontFamily: 'monospace' }}>
+                        {pod.podIP.length > 16 ? `${pod.podIP.slice(0, 16)}…` : pod.podIP}
+                      </Typography>
+                    </Tooltip>
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+                <TableCell align="center" sx={{ fontSize: '0.8rem' }}>
+                  {pod.containers?.length ?? 0}
+                </TableCell>
+                <TableCell sx={{ fontSize: '0.8rem' }}>{pod.nodeName || '-'}</TableCell>
+                <TableCell align="center" sx={{ fontSize: '0.8rem' }}>
                   <Chip
                     label={pod.isReady ? 'Yes' : 'No'}
                     color={pod.isReady ? 'success' : 'error'}
                     size="small"
                     variant="outlined"
+                    sx={{ fontSize: '0.75rem' }}
                   />
                 </TableCell>
-                <TableCell align="center">
+                <TableCell align="center" sx={{ fontSize: '0.8rem' }}>
                   <Badge 
                     badgeContent={pod.restartCount} 
                     color={pod.restartCount > 0 ? 'warning' : 'default'}
@@ -436,9 +527,9 @@ const Pods: React.FC = () => {
                     <Box sx={{ width: 20, height: 20 }} />
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ fontSize: '0.8rem' }}>
                   <Tooltip title={new Date(pod.creationTimestamp).toLocaleString()}>
-                    <Typography variant="body2">
+                    <Typography variant="caption" component="span">
                       {new Date(pod.creationTimestamp).toLocaleDateString()}
                     </Typography>
                   </Tooltip>
@@ -457,6 +548,7 @@ const Pods: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       {/* Actions Menu */}
       <Menu
@@ -577,7 +669,7 @@ const Pods: React.FC = () => {
             <Box
               component="pre"
               sx={{
-                backgroundColor: 'grey.100',
+                backgroundColor: 'background.default',
                 p: 2,
                 borderRadius: 1,
                 maxHeight: 400,

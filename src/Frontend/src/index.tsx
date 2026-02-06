@@ -17,41 +17,24 @@ const queryClient = new QueryClient({
 
 const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: 'dark',
     primary: {
-      main: '#8B5CF6', // Radiant purple 🟣
-      light: '#A78BFA',
-      dark: '#7C3AED',
+      main: '#7c9fd0',
     },
     secondary: {
-      main: '#C084FC', // Lighter purple accent
-      light: '#E9D5FF',
-      dark: '#9333EA',
+      main: '#4a9b7a',
     },
     background: {
-      default: '#FAFAFA',
-      paper: '#FFFFFF',
+      default: '#111827',
+      paper: '#1a2332',
     },
-  },
-  components: {
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          background: 'linear-gradient(135deg, #8B5CF6 0%, #9333EA 100%)',
-        },
-      },
+    text: {
+      primary: '#dde1e6',
+      secondary: '#8b92a0',
     },
-    MuiListItemButton: {
-      styleOverrides: {
-        root: {
-          '&.Mui-selected': {
-            backgroundColor: 'rgba(139, 92, 246, 0.12)',
-            '&:hover': {
-              backgroundColor: 'rgba(139, 92, 246, 0.20)',
-            },
-          },
-        },
-      },
+    action: {
+      hover: 'rgba(221, 225, 230, 0.06)',
+      selected: 'rgba(221, 225, 230, 0.1)',
     },
   },
 });

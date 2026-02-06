@@ -40,6 +40,7 @@ import {
 } from '@mui/icons-material';
 import { dashboardApi } from '../services/api';
 import { DashboardInfo } from '../types';
+import { SYSTEM_NAMESPACES } from '../constants';
 
 const Dashboard: React.FC = () => {
   const { data: dashboardInfo, isLoading, error, refetch } = useQuery<DashboardInfo>({
@@ -111,6 +112,11 @@ const Dashboard: React.FC = () => {
         return 'error';
     }
   };
+
+  const systemPodsCount = dashboardInfo.namespacePodDistribution
+    .filter((ns) => SYSTEM_NAMESPACES.includes(ns.namespace))
+    .reduce((sum, ns) => sum + ns.podCount, 0);
+  const userPodsCount = dashboardInfo.totalPods - systemPodsCount;
 
   return (
     <Box>
@@ -202,6 +208,9 @@ const Dashboard: React.FC = () => {
                   />
                 )}
               </Box>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                User pods: {userPodsCount} | System pods: {systemPodsCount}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
