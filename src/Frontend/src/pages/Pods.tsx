@@ -72,6 +72,8 @@ const getInitialHideSystemPods = (): boolean => {
   }
 };
 
+const DEFAULT_EXTERNAL_PORT = process.env.REACT_APP_EXTERNAL_PORT || '80';
+
 const Pods: React.FC = () => {
   const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -459,6 +461,7 @@ const Pods: React.FC = () => {
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Containers</TableCell>
               <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Node</TableCell>
               <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>External IP</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>External Port</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Ready</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Restarts</TableCell>
               <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Age</TableCell>
@@ -534,6 +537,9 @@ const Pods: React.FC = () => {
                   ) : (
                     '-'
                   )}
+                </TableCell>
+                <TableCell align="center" sx={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                  {pod.nodeName && nodeToExternalIP[pod.nodeName] ? DEFAULT_EXTERNAL_PORT : '-'}
                 </TableCell>
                 <TableCell align="center" sx={{ fontSize: '0.8rem' }}>
                   <Chip
