@@ -121,8 +121,17 @@ public class KubernetesService : IKubernetesService
         try
         {
             var pods = await _kubernetesClient.CoreV1.ListPodForAllNamespacesAsync();
-            var services = await _kubernetesClient.CoreV1.ListServiceForAllNamespacesAsync();
-            var podInfos = pods.Items.Select(p => MapToPodInfoWithNodePorts(p, services.Items)).ToList();
+            IList<V1Service>? services = null;
+            try
+            {
+                var svcList = await _kubernetesClient.CoreV1.ListServiceForAllNamespacesAsync();
+                services = svcList?.Items;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not list services for NodePorts; returning pods without external ports");
+            }
+            var podInfos = pods.Items.Select(p => MapToPodInfoWithNodePorts(p, services ?? Array.Empty<V1Service>())).ToList();
 
             _cache.Set(cacheKey, podInfos, _config.CacheTimeout);
             return podInfos;
@@ -146,8 +155,17 @@ public class KubernetesService : IKubernetesService
         try
         {
             var pods = await _kubernetesClient.CoreV1.ListNamespacedPodAsync(namespaceName);
-            var services = await _kubernetesClient.CoreV1.ListNamespacedServiceAsync(namespaceName);
-            var podInfos = pods.Items.Select(p => MapToPodInfoWithNodePorts(p, services.Items)).ToList();
+            IList<V1Service>? services = null;
+            try
+            {
+                var svcList = await _kubernetesClient.CoreV1.ListNamespacedServiceAsync(namespaceName);
+                services = svcList?.Items;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not list services in namespace {Namespace} for NodePorts", namespaceName);
+            }
+            var podInfos = pods.Items.Select(p => MapToPodInfoWithNodePorts(p, services ?? Array.Empty<V1Service>())).ToList();
 
             _cache.Set(cacheKey, podInfos, _config.CacheTimeout);
             return podInfos;
@@ -164,8 +182,17 @@ public class KubernetesService : IKubernetesService
         try
         {
             var pod = await _kubernetesClient.CoreV1.ReadNamespacedPodAsync(podName, namespaceName);
-            var services = await _kubernetesClient.CoreV1.ListNamespacedServiceAsync(namespaceName);
-            return MapToPodInfoWithNodePorts(pod, services.Items);
+            IList<V1Service>? services = null;
+            try
+            {
+                var svcList = await _kubernetesClient.CoreV1.ListNamespacedServiceAsync(namespaceName);
+                services = svcList?.Items;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not list services for pod {PodName} NodePorts", podName);
+            }
+            return MapToPodInfoWithNodePorts(pod, services ?? Array.Empty<V1Service>());
         }
         catch (Exception ex)
         {

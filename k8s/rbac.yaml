@@ -10,7 +10,7 @@ metadata:
   name: k8s-control-panel-role
 rules:
 - apiGroups: [""]
-  resources: ["pods", "pods/log", "pods/exec", "nodes", "namespaces", "events"]
+  resources: ["pods", "pods/log", "pods/exec", "nodes", "namespaces", "events", "services"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
   resources: ["pods"]
@@ -22,7 +22,7 @@ rules:
   resources: ["jobs", "cronjobs"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["networking.k8s.io"]
-  resources: ["services", "ingresses"]
+  resources: ["ingresses"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["storage.k8s.io"]
   resources: ["persistentvolumes", "persistentvolumeclaims"]
