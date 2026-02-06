@@ -14,6 +14,8 @@ export interface PodInfo {
   ready: boolean; // Ready status for display
   requests?: ResourceRequirements;
   limits?: ResourceRequirements;
+  /** NodePorts from Services that select this pod (for external access via node IP). */
+  nodePorts?: number[];
 }
 
 export interface ContainerInfo {

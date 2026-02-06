@@ -74,6 +74,11 @@ public class PodInfo
     /// Resource limits
     /// </summary>
     public ResourceRequirements? Limits { get; set; }
+
+    /// <summary>
+    /// NodePorts from Services that select this pod (for external access via node IP).
+    /// </summary>
+    public List<int> NodePorts { get; set; } = new();
 }
 
 /// <summary>

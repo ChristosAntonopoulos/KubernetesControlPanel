@@ -72,7 +72,7 @@ const getInitialHideSystemPods = (): boolean => {
   }
 };
 
-const DEFAULT_EXTERNAL_PORT = process.env.REACT_APP_EXTERNAL_PORT || '80';
+const FALLBACK_EXTERNAL_PORT = process.env.REACT_APP_EXTERNAL_PORT || '30080';
 
 const Pods: React.FC = () => {
   const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
@@ -539,7 +539,11 @@ const Pods: React.FC = () => {
                   )}
                 </TableCell>
                 <TableCell align="center" sx={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                  {pod.nodeName && nodeToExternalIP[pod.nodeName] ? DEFAULT_EXTERNAL_PORT : '-'}
+                  {pod.nodeName && nodeToExternalIP[pod.nodeName]
+                    ? (pod.nodePorts && pod.nodePorts.length > 0
+                        ? pod.nodePorts.join(', ')
+                        : FALLBACK_EXTERNAL_PORT)
+                    : '-'}
                 </TableCell>
                 <TableCell align="center" sx={{ fontSize: '0.8rem' }}>
                   <Chip

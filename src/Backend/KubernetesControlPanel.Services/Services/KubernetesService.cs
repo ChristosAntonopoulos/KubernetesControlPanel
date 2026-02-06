@@ -121,8 +121,9 @@ public class KubernetesService : IKubernetesService
         try
         {
             var pods = await _kubernetesClient.CoreV1.ListPodForAllNamespacesAsync();
-            var podInfos = pods.Items.Select(MapToPodInfo).ToList();
-            
+            var services = await _kubernetesClient.CoreV1.ListServiceForAllNamespacesAsync();
+            var podInfos = pods.Items.Select(p => MapToPodInfoWithNodePorts(p, services.Items)).ToList();
+
             _cache.Set(cacheKey, podInfos, _config.CacheTimeout);
             return podInfos;
         }
@@ -145,8 +146,9 @@ public class KubernetesService : IKubernetesService
         try
         {
             var pods = await _kubernetesClient.CoreV1.ListNamespacedPodAsync(namespaceName);
-            var podInfos = pods.Items.Select(MapToPodInfo).ToList();
-            
+            var services = await _kubernetesClient.CoreV1.ListNamespacedServiceAsync(namespaceName);
+            var podInfos = pods.Items.Select(p => MapToPodInfoWithNodePorts(p, services.Items)).ToList();
+
             _cache.Set(cacheKey, podInfos, _config.CacheTimeout);
             return podInfos;
         }
@@ -162,7 +164,8 @@ public class KubernetesService : IKubernetesService
         try
         {
             var pod = await _kubernetesClient.CoreV1.ReadNamespacedPodAsync(podName, namespaceName);
-            return MapToPodInfo(pod);
+            var services = await _kubernetesClient.CoreV1.ListNamespacedServiceAsync(namespaceName);
+            return MapToPodInfoWithNodePorts(pod, services.Items);
         }
         catch (Exception ex)
         {
@@ -333,7 +336,8 @@ public class KubernetesService : IKubernetesService
             restartCount = containerStatuses.Sum(cs => cs.RestartCount);
         }
         
-        return new PodInfo
+        var labels = pod.Metadata?.Labels?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, string>();
+        var podInfo = new PodInfo
         {
             Name = pod.Metadata?.Name ?? string.Empty,
             Namespace = pod.Metadata?.Namespace() ?? string.Empty,
@@ -343,11 +347,43 @@ public class KubernetesService : IKubernetesService
             NodeName = pod.Spec?.NodeName,
             CreationTimestamp = pod.Metadata?.CreationTimestamp ?? DateTime.UtcNow,
             Containers = containers,
-            Labels = pod.Metadata?.Labels?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, string>(),
+            Labels = labels,
             Annotations = pod.Metadata?.Annotations?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, string>(),
             RestartCount = restartCount,
             IsReady = isReady
         };
+        return podInfo;
+    }
+
+    private PodInfo MapToPodInfoWithNodePorts(V1Pod pod, IList<V1Service> services)
+    {
+        var info = MapToPodInfo(pod);
+        var ns = info.Namespace;
+        var nodePorts = new HashSet<int>();
+        foreach (var svc in services)
+        {
+            if (svc.Metadata?.NamespaceProperty != ns) continue;
+            if (svc.Spec?.Selector == null) continue;
+            if (!ServiceSelectorMatchesPod(svc.Spec.Selector, info.Labels)) continue;
+            if (svc.Spec.Ports == null) continue;
+            foreach (var port in svc.Spec.Ports)
+            {
+                if (port.NodePort.HasValue)
+                    nodePorts.Add(port.NodePort.Value);
+            }
+        }
+        info.NodePorts = nodePorts.OrderBy(p => p).ToList();
+        return info;
+    }
+
+    private static bool ServiceSelectorMatchesPod(IDictionary<string, string> selector, Dictionary<string, string> podLabels)
+    {
+        foreach (var kvp in selector)
+        {
+            if (!podLabels.TryGetValue(kvp.Key, out var podValue) || podValue != kvp.Value)
+                return false;
+        }
+        return true;
     }
 
     private NodeInfo MapToNodeInfo(V1Node node)
