@@ -20,6 +20,27 @@ import {
 import { nodesApi } from '../services/api';
 import { NodeInfo } from '../types';
 
+const formatCpu = (millicores: number) =>
+  millicores >= 1000 ? `${(millicores / 1000).toFixed(2)} cores` : `${millicores}m`;
+const formatMemoryBytes = (bytes: number) => {
+  const mi = bytes / (1024 * 1024);
+  if (mi >= 1024) return `${(mi / 1024).toFixed(2)} Gi`;
+  return `${mi.toFixed(1)} Mi`;
+};
+const parseCapacityCpuToCores = (s?: string): number => {
+  if (!s) return 0;
+  if (s.endsWith('m')) return parseInt(s, 10) / 1000;
+  return parseFloat(s) || 0;
+};
+const parseCapacityMemoryToBytes = (s?: string): number => {
+  if (!s) return 0;
+  const n = parseFloat(s) || 0;
+  if (s.endsWith('Ki')) return n * 1024;
+  if (s.endsWith('Mi')) return n * 1024 * 1024;
+  if (s.endsWith('Gi')) return n * 1024 * 1024 * 1024;
+  return n;
+};
+
 const Nodes: React.FC = () => {
   const { data: nodes, isLoading, error } = useQuery<NodeInfo[]>({
     queryKey: ['nodes'],
@@ -124,6 +145,51 @@ const Nodes: React.FC = () => {
                     <Typography variant="body2">
                       Pods: {node.capacity.pods || 'N/A'}
                     </Typography>
+                  </Box>
+                )}
+
+                {(node.cpuUsageMillicores != null || node.memoryUsageBytes != null) && (
+                  <Box mb={2}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Resource usage
+                    </Typography>
+                    {node.cpuUsageMillicores != null && (
+                      <Box mb={1}>
+                        <Typography variant="body2">
+                          CPU: {formatCpu(node.cpuUsageMillicores)}
+                          {node.capacity?.cpu && ` / ${node.capacity.cpu}`}
+                        </Typography>
+                        {node.capacity?.cpu && (
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min(
+                              100,
+                              (node.cpuUsageMillicores / 1000 / parseCapacityCpuToCores(node.capacity.cpu)) * 100
+                            )}
+                            sx={{ mt: 0.5, height: 6, borderRadius: 1 }}
+                          />
+                        )}
+                      </Box>
+                    )}
+                    {node.memoryUsageBytes != null && (
+                      <Box>
+                        <Typography variant="body2">
+                          Memory: {formatMemoryBytes(node.memoryUsageBytes)}
+                          {node.capacity?.memory && ` / ${node.capacity.memory}`}
+                        </Typography>
+                        {node.capacity?.memory && (
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min(
+                              100,
+                              (node.memoryUsageBytes / parseCapacityMemoryToBytes(node.capacity.memory)) * 100
+                            )}
+                            color="secondary"
+                            sx={{ mt: 0.5, height: 6, borderRadius: 1 }}
+                          />
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 )}
 

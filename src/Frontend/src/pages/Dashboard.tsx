@@ -244,6 +244,11 @@ const Dashboard: React.FC = () => {
       </Grid>
 
       {/* Resource Usage */}
+      {dashboardInfo.resourceUsage.metricsAvailable === false && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Metrics unavailable – install metrics-server in the cluster to see real CPU and memory usage.
+        </Alert>
+      )}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
           <Card>

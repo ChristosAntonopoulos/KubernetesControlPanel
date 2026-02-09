@@ -72,6 +72,10 @@ export const podsApi = {
     const response = await api.get(`/pods/${namespace}/${podName}/metrics`);
     return response.data;
   },
+  getBulkMetrics: async (): Promise<PodMetrics[]> => {
+    const response = await api.get('/pods/metrics');
+    return response.data;
+  },
   getResourceHistory: async (namespace: string, podName: string, hours: number = 24): Promise<PodResourceUsage[]> => {
     const response = await api.get(`/pods/${namespace}/${podName}/metrics/history?hours=${hours}`);
     return response.data;

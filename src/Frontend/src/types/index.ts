@@ -48,6 +48,10 @@ export interface NodeInfo {
   operatingSystem?: string;
   architecture?: string;
   containerRuntime?: string;
+  /** Current CPU usage in millicores (from metrics-server when available). */
+  cpuUsageMillicores?: number | null;
+  /** Current memory usage in bytes (from metrics-server when available). */
+  memoryUsageBytes?: number | null;
 }
 
 export interface NodeResources {
@@ -109,6 +113,8 @@ export interface ResourceUsageSummary {
   totalMemory: string;
   usedCpu: string;
   usedMemory: string;
+  /** False when metrics-server is not available; then used/percentages are 0. */
+  metricsAvailable?: boolean;
 }
 
 // New interfaces for enhanced pod management

@@ -58,7 +58,7 @@ import {
   Event as EventIcon,
 } from '@mui/icons-material';
 import { podsApi, namespacesApi, nodesApi } from '../services/api';
-import { PodInfo, PodRestartResult } from '../types';
+import { PodInfo, PodRestartResult, PodMetrics as PodMetricsType } from '../types';
 import { SYSTEM_NAMESPACES, PODS_HIDE_SYSTEM_STORAGE_KEY } from '../constants';
 import LogViewer from '../components/LogViewer';
 import PodMetrics from '../components/PodMetrics';
@@ -122,6 +122,30 @@ const Pods: React.FC = () => {
     queryKey: ['nodes'],
     queryFn: nodesApi.getAll,
   });
+
+  const { data: bulkMetrics } = useQuery<PodMetricsType[]>({
+    queryKey: ['pods-metrics'],
+    queryFn: podsApi.getBulkMetrics,
+    refetchInterval: 30000,
+  });
+
+  const metricsByPod = React.useMemo(() => {
+    const map: Record<string, PodMetricsType> = {};
+    bulkMetrics?.forEach((m) => {
+      map[`${m.namespace}/${m.name}`] = m;
+    });
+    return map;
+  }, [bulkMetrics]);
+
+  const formatCpu = (millicores: number) =>
+    millicores >= 1000 ? `${(millicores / 1000).toFixed(2)} cores` : `${millicores}m`;
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  };
 
   const nodeToExternalIP = React.useMemo(() => {
     const map: Record<string, string> = {};
@@ -464,6 +488,8 @@ const Pods: React.FC = () => {
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>External Port</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Ready</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Restarts</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>CPU</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Memory</TableCell>
               <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Age</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>Actions</TableCell>
             </TableRow>
@@ -562,6 +588,16 @@ const Pods: React.FC = () => {
                   >
                     <Box sx={{ width: 20, height: 20 }} />
                   </Badge>
+                </TableCell>
+                <TableCell sx={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                  {metricsByPod[`${pod.namespace}/${pod.name}`]
+                    ? formatCpu(metricsByPod[`${pod.namespace}/${pod.name}`].totalCpuUsage)
+                    : '-'}
+                </TableCell>
+                <TableCell sx={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                  {metricsByPod[`${pod.namespace}/${pod.name}`]
+                    ? formatBytes(metricsByPod[`${pod.namespace}/${pod.name}`].totalMemoryUsage)
+                    : '-'}
                 </TableCell>
                 <TableCell sx={{ fontSize: '0.8rem' }}>
                   <Tooltip title={new Date(pod.creationTimestamp).toLocaleString()}>

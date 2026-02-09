@@ -68,6 +68,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPodService, PodService>();
 builder.Services.AddScoped<INodeService, NodeService>();
 builder.Services.AddScoped<INamespaceService, NamespaceService>();
+builder.Services.AddScoped<IMetricsProvider, MetricsProvider>();
 
 // Add Configuration
 builder.Services.Configure<KubernetesConfig>(builder.Configuration.GetSection("Kubernetes"));

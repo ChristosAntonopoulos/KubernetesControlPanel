@@ -12,15 +12,18 @@ public class NodeService : INodeService
 {
     private readonly IKubernetesService _kubernetesService;
     private readonly IKubernetes _kubernetesClient;
+    private readonly IMetricsProvider _metricsProvider;
     private readonly ILogger<NodeService> _logger;
 
     public NodeService(
         IKubernetesService kubernetesService,
         IKubernetes kubernetesClient,
+        IMetricsProvider metricsProvider,
         ILogger<NodeService> logger)
     {
         _kubernetesService = kubernetesService;
         _kubernetesClient = kubernetesClient;
+        _metricsProvider = metricsProvider;
         _logger = logger;
     }
 
@@ -28,7 +31,9 @@ public class NodeService : INodeService
     {
         try
         {
-            return await _kubernetesService.GetAllNodesAsync();
+            var nodes = await _kubernetesService.GetAllNodesAsync();
+            await AttachNodeMetricsAsync(nodes);
+            return nodes;
         }
         catch (Exception ex)
         {
@@ -41,12 +46,30 @@ public class NodeService : INodeService
     {
         try
         {
-            return await _kubernetesService.GetNodeDetailsAsync(nodeName);
+            var node = await _kubernetesService.GetNodeDetailsAsync(nodeName);
+            if (node != null)
+                await AttachNodeMetricsAsync(new List<NodeInfo> { node });
+            return node;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting node details for {NodeName}", nodeName);
             return null;
+        }
+    }
+
+    private async Task AttachNodeMetricsAsync(List<NodeInfo> nodes)
+    {
+        var nodeMetrics = await _metricsProvider.GetNodeMetricsAsync();
+        if (nodeMetrics == null) return;
+        var byName = nodeMetrics.ToDictionary(m => m.Name, StringComparer.OrdinalIgnoreCase);
+        foreach (var node in nodes)
+        {
+            if (byName.TryGetValue(node.Name, out var entry))
+            {
+                node.CpuUsageMillicores = entry.CpuMillicores;
+                node.MemoryUsageBytes = entry.MemoryBytes;
+            }
         }
     }
 

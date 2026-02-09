@@ -14,15 +14,18 @@ public class PodService : IPodService
 {
     private readonly IKubernetesService _kubernetesService;
     private readonly IKubernetes _kubernetesClient;
+    private readonly IMetricsProvider _metricsProvider;
     private readonly ILogger<PodService> _logger;
 
     public PodService(
         IKubernetesService kubernetesService,
         IKubernetes kubernetesClient,
+        IMetricsProvider metricsProvider,
         ILogger<PodService> logger)
     {
         _kubernetesService = kubernetesService;
         _kubernetesClient = kubernetesClient;
+        _metricsProvider = metricsProvider;
         _logger = logger;
     }
 
@@ -128,30 +131,26 @@ public class PodService : IPodService
     {
         try
         {
-            // Note: This requires metrics-server to be installed in the cluster
-            // For now, return a basic metrics structure since metrics-server integration is complex
-            var podMetrics = new KubernetesControlPanel.Core.Models.PodMetrics
-            {
-                Name = podName,
-                Namespace = namespaceName,
-                Timestamp = DateTime.UtcNow,
-                Containers = new List<KubernetesControlPanel.Core.Models.ContainerMetrics>()
-            };
-
-            // In a real implementation, you would:
-            // 1. Use the metrics.k8s.io API
-            // 2. Parse the actual metrics data
-            // 3. Populate CPU and memory usage
-            
-            // Simulate async operation
-            await Task.Delay(1);
-            
-            return podMetrics;
+            return await _metricsProvider.GetPodMetricsAsync(namespaceName, podName);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not get metrics for pod {PodName} in namespace {Namespace}. Make sure metrics-server is installed.", podName, namespaceName);
             return null;
+        }
+    }
+
+    public async Task<List<KubernetesControlPanel.Core.Models.PodMetrics>> GetBulkPodMetricsAsync()
+    {
+        try
+        {
+            var list = await _metricsProvider.GetPodMetricsListAsync();
+            return list?.ToList() ?? new List<KubernetesControlPanel.Core.Models.PodMetrics>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not get bulk pod metrics. Ensure metrics-server is installed.");
+            return new List<KubernetesControlPanel.Core.Models.PodMetrics>();
         }
     }
 

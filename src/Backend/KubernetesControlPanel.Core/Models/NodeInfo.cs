@@ -79,6 +79,16 @@ public class NodeInfo
     /// Container runtime
     /// </summary>
     public string? ContainerRuntime { get; set; }
+
+    /// <summary>
+    /// Current CPU usage in millicores (from metrics-server when available).
+    /// </summary>
+    public long? CpuUsageMillicores { get; set; }
+
+    /// <summary>
+    /// Current memory usage in bytes (from metrics-server when available).
+    /// </summary>
+    public long? MemoryUsageBytes { get; set; }
 }
 
 /// <summary>

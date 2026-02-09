@@ -44,6 +44,27 @@ public class PodsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets metrics for all pods (all namespaces). Use for bulk display e.g. Pods table CPU/Memory columns.
+    /// </summary>
+    /// <returns>List of pod metrics</returns>
+    [HttpGet("metrics")]
+    [ProducesResponseType(typeof(List<PodMetrics>), 200)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<List<PodMetrics>>> GetBulkPodMetrics()
+    {
+        try
+        {
+            var metrics = await _podService.GetBulkPodMetricsAsync();
+            return Ok(metrics);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting bulk pod metrics");
+            return StatusCode(500, new { error = "Failed to retrieve pod metrics" });
+        }
+    }
+
+    /// <summary>
     /// Gets pods by namespace
     /// </summary>
     /// <param name="namespaceName">Namespace name</param>

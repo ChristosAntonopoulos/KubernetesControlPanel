@@ -19,17 +19,20 @@ public class KubernetesService : IKubernetesService
     private readonly IMemoryCache _cache;
     private readonly ILogger<KubernetesService> _logger;
     private readonly KubernetesConfig _config;
+    private readonly IMetricsProvider _metricsProvider;
 
     public KubernetesService(
         IKubernetes kubernetesClient,
         IMemoryCache cache,
         ILogger<KubernetesService> logger,
-        IOptions<KubernetesConfig> config)
+        IOptions<KubernetesConfig> config,
+        IMetricsProvider metricsProvider)
     {
         _kubernetesClient = kubernetesClient;
         _cache = cache;
         _logger = logger;
         _config = config.Value;
+        _metricsProvider = metricsProvider;
     }
 
     public async Task<DashboardInfo> GetClusterInfoAsync()
@@ -491,25 +494,45 @@ public class KubernetesService : IKubernetesService
         };
     }
 
-    private Task<ResourceUsageSummary> CalculateResourceUsageAsync(List<NodeInfo> nodes, List<PodInfo> pods)
+    private async Task<ResourceUsageSummary> CalculateResourceUsageAsync(List<NodeInfo> nodes, List<PodInfo> pods)
     {
         var totalCpu = nodes.Sum(n => ParseCpu(n.Capacity?.Cpu));
-        var totalMemory = nodes.Sum(n => ParseMemory(n.Capacity?.Memory));
-        
-        var usedCpu = totalCpu * 0.3;
-        var usedMemory = totalMemory * 0.4;
+        var totalMemoryMi = nodes.Sum(n => ParseMemory(n.Capacity?.Memory));
+
+        var nodeMetrics = await _metricsProvider.GetNodeMetricsAsync();
+        if (nodeMetrics == null || nodeMetrics.Count == 0)
+        {
+            return new ResourceUsageSummary
+            {
+                MetricsAvailable = false,
+                CpuUsagePercentage = 0,
+                MemoryUsagePercentage = 0,
+                TotalCpu = $"{totalCpu:F1}",
+                TotalMemory = $"{totalMemoryMi:F0}Mi",
+                UsedCpu = "0",
+                UsedMemory = "0"
+            };
+        }
+
+        var usedCpuMillicores = nodeMetrics.Sum(m => m.CpuMillicores);
+        var usedMemoryBytes = nodeMetrics.Sum(m => m.MemoryBytes);
+        var totalCpuCores = totalCpu;
+        var totalMemoryBytes = totalMemoryMi * 1024 * 1024;
+        var usedCpuCores = usedCpuMillicores / 1000.0;
+        var usedMemoryMi = usedMemoryBytes / (1024.0 * 1024.0);
 
         var result = new ResourceUsageSummary
         {
-            CpuUsagePercentage = totalCpu > 0 ? (usedCpu / totalCpu) * 100 : 0,
-            MemoryUsagePercentage = totalMemory > 0 ? (usedMemory / totalMemory) * 100 : 0,
-            TotalCpu = $"{totalCpu:F1}",
-            TotalMemory = $"{totalMemory:F0}Mi",
-            UsedCpu = $"{usedCpu:F1}",
-            UsedMemory = $"{usedMemory:F0}Mi"
+            MetricsAvailable = true,
+            CpuUsagePercentage = totalCpuCores > 0 ? (usedCpuCores / totalCpuCores) * 100 : 0,
+            MemoryUsagePercentage = totalMemoryBytes > 0 ? (usedMemoryBytes / totalMemoryBytes) * 100 : 0,
+            TotalCpu = $"{totalCpuCores:F1}",
+            TotalMemory = $"{totalMemoryMi:F0}Mi",
+            UsedCpu = $"{usedCpuCores:F1}",
+            UsedMemory = $"{usedMemoryMi:F0}Mi"
         };
 
-        return Task.FromResult(result);
+        return result;
     }
 
     private double ParseCpu(string? cpuString)

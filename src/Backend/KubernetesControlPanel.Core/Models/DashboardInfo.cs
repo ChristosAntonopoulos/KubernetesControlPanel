@@ -187,4 +187,9 @@ public class ResourceUsageSummary
     /// Used memory
     /// </summary>
     public string UsedMemory { get; set; } = string.Empty;
+
+    /// <summary>
+    /// True when values are from metrics-server; false when metrics are unavailable (e.g. metrics-server not installed).
+    /// </summary>
+    public bool MetricsAvailable { get; set; } = true;
 } 

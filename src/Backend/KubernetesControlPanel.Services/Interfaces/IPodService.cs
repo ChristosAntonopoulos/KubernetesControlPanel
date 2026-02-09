@@ -43,6 +43,11 @@ public interface IPodService
     Task<PodMetrics?> GetPodMetricsAsync(string namespaceName, string podName);
 
     /// <summary>
+    /// Gets metrics for all pods (all namespaces). Used for bulk display e.g. Pods table.
+    /// </summary>
+    Task<List<PodMetrics>> GetBulkPodMetricsAsync();
+
+    /// <summary>
     /// Restarts a pod
     /// </summary>
     Task<bool> RestartPodAsync(string namespaceName, string podName);
