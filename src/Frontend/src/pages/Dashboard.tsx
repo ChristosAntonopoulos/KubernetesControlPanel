@@ -24,6 +24,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Link,
 } from '@mui/material';
 import {
   CheckCircle as HealthyIcon,
@@ -246,7 +247,17 @@ const Dashboard: React.FC = () => {
       {/* Resource Usage */}
       {dashboardInfo.resourceUsage.metricsAvailable === false && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Metrics unavailable – install metrics-server in the cluster to see real CPU and memory usage.
+          <Typography variant="body2" component="span">
+            Metrics unavailable – install metrics-server in the cluster to see real CPU and memory usage.
+          </Typography>
+          <Box component="p" sx={{ margin: '8px 0 4px', fontFamily: 'monospace', fontSize: '0.8rem', overflow: 'auto' }}>
+            kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+          </Box>
+          <Typography variant="body2">
+            <Link href="https://github.com/kubernetes-sigs/metrics-server" target="_blank" rel="noopener noreferrer">
+              Learn more (metrics-server)
+            </Link>
+          </Typography>
         </Alert>
       )}
       <Grid container spacing={3} sx={{ mb: 3 }}>
