@@ -8,6 +8,7 @@ import Nodes from './pages/Nodes';
 import Namespaces from './pages/Namespaces';
 import Deployments from './pages/Deployments';
 import ExternalLinks from './pages/ExternalLinks';
+import MyApps from './pages/MyApps';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/deployments" element={<Deployments />} />
           <Route path="/nodes" element={<Nodes />} />
           <Route path="/namespaces" element={<Namespaces />} />
+          <Route path="/apps" element={<MyApps />} />
           <Route path="/links" element={<ExternalLinks />} />
         </Routes>
       </Layout>

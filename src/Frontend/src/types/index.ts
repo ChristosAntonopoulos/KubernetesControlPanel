@@ -193,6 +193,35 @@ export interface ExternalLinksConfig {
   categories: ExternalLinkCategory[];
 }
 
+export interface AccessUrl {
+  url: string;
+  label: string;
+  source: string;
+  openInNewTab: boolean;
+}
+
+export interface AccessAppEntry {
+  name: string;
+  displayName: string;
+  kind: string;
+  status: string;
+  statusDetail?: string;
+  urls: AccessUrl[];
+  noUrlReason?: string;
+  labels: Record<string, string>;
+}
+
+export interface AccessNamespaceGroup {
+  namespace: string;
+  isSystemNamespace: boolean;
+  apps: AccessAppEntry[];
+}
+
+export interface ClusterAccessOverview {
+  namespaces: AccessNamespaceGroup[];
+  lastUpdated: string;
+}
+
 export interface PodResourceUsage {
   timestamp: string;
   podName: string;

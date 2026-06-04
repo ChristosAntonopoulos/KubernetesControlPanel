@@ -29,4 +29,19 @@ public class KubernetesConfig
     /// Cache timeout for cluster data
     /// </summary>
     public TimeSpan CacheTimeout { get; set; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>
+    /// Public hostname or IP used to build http(s) links for NodePort services (e.g. your cluster's public IP or DNS).
+    /// </summary>
+    public string? NodePortPublicHost { get; set; }
+
+    /// <summary>
+    /// Namespaces treated as internal/system (hidden by default on the My Apps page).
+    /// </summary>
+    public List<string> SystemNamespaces { get; set; } = new()
+    {
+        "kube-system",
+        "kube-public",
+        "kube-node-lease"
+    };
 } 

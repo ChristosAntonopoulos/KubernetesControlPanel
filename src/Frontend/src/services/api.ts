@@ -13,6 +13,7 @@ import {
   ScaleDeploymentRequest,
   ScaleDeploymentResult,
   ExternalLinksConfig,
+  ClusterAccessOverview,
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
@@ -167,6 +168,14 @@ export const deploymentsApi = {
 export const linksApi = {
   getAll: async (): Promise<ExternalLinksConfig> => {
     const response = await api.get('/links');
+    return response.data;
+  },
+};
+
+// Cluster-discovered apps and URLs
+export const accessApi = {
+  getOverview: async (): Promise<ClusterAccessOverview> => {
+    const response = await api.get('/access');
     return response.data;
   },
 };

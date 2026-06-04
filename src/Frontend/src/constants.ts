@@ -9,3 +9,5 @@ export const SYSTEM_NAMESPACES = [
 ];
 
 export const PODS_HIDE_SYSTEM_STORAGE_KEY = 'pods-hide-system-pods';
+
+export const APPS_HIDE_SYSTEM_STORAGE_KEY = 'apps-hide-system-namespaces';

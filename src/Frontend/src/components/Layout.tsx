@@ -22,6 +22,7 @@ import {
   Folder as NamespacesIcon,
   Apps as DeploymentsIcon,
   Public as ExternalLinksIcon,
+  Web as MyAppsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -33,6 +34,7 @@ interface LayoutProps {
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+  { text: 'My Apps', icon: <MyAppsIcon />, path: '/apps' },
   { text: 'Pods', icon: <PodsIcon />, path: '/pods' },
   { text: 'Deployments', icon: <DeploymentsIcon />, path: '/deployments' },
   { text: 'Nodes', icon: <NodesIcon />, path: '/nodes' },
