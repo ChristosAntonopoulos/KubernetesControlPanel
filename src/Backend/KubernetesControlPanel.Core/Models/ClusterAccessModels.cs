@@ -22,7 +22,20 @@ public class AccessAppEntry
     public string? StatusDetail { get; set; }
     public List<AccessUrl> Urls { get; set; } = new();
     public string? NoUrlReason { get; set; }
+    public List<AccessEndpointHint> EndpointHints { get; set; } = new();
     public Dictionary<string, string> Labels { get; set; } = new();
+}
+
+/// <summary>
+/// Manual access details when a clickable URL could not be built (e.g. NodePort without a detected host).
+/// </summary>
+public class AccessEndpointHint
+{
+    public string ServiceName { get; set; } = string.Empty;
+    public string Namespace { get; set; } = string.Empty;
+    public int NodePort { get; set; }
+    public string? Host { get; set; }
+    public string Message { get; set; } = string.Empty;
 }
 
 public class AccessUrl

@@ -200,6 +200,14 @@ export interface AccessUrl {
   openInNewTab: boolean;
 }
 
+export interface AccessEndpointHint {
+  serviceName: string;
+  namespace: string;
+  nodePort: number;
+  host?: string;
+  message: string;
+}
+
 export interface AccessAppEntry {
   name: string;
   displayName: string;
@@ -208,6 +216,7 @@ export interface AccessAppEntry {
   statusDetail?: string;
   urls: AccessUrl[];
   noUrlReason?: string;
+  endpointHints?: AccessEndpointHint[];
   labels: Record<string, string>;
 }
 

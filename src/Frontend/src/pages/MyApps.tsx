@@ -29,7 +29,7 @@ import {
   PauseCircle as StoppedIcon,
 } from '@mui/icons-material';
 import { accessApi } from '../services/api';
-import { AccessAppEntry, AccessNamespaceGroup } from '../types';
+import { AccessAppEntry, AccessEndpointHint, AccessNamespaceGroup } from '../types';
 import { APPS_HIDE_SYSTEM_STORAGE_KEY, SYSTEM_NAMESPACES } from '../constants';
 
 const readHideSystem = (): boolean => {
@@ -108,11 +108,35 @@ const AppCard: React.FC<{ app: AccessAppEntry }> = ({ app }) => {
             ))}
           </Box>
         ) : (
-          <Box display="flex" gap={1} alignItems="flex-start">
-            <LinkOffIcon fontSize="small" color="disabled" sx={{ mt: 0.25 }} />
-            <Typography variant="body2" color="text.secondary">
-              {app.noUrlReason ?? 'No public web address found for this app.'}
-            </Typography>
+          <Box display="flex" flexDirection="column" gap={1}>
+            <Box display="flex" gap={1} alignItems="flex-start">
+              <LinkOffIcon fontSize="small" color="disabled" sx={{ mt: 0.25 }} />
+              <Typography variant="body2" color="text.secondary">
+                {app.noUrlReason ?? 'No public web address found for this app.'}
+              </Typography>
+            </Box>
+            {app.endpointHints && app.endpointHints.length > 0 && (
+              <Box sx={{ pl: 3.5, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                {app.endpointHints.map((hint: AccessEndpointHint) => (
+                  <Box key={`${hint.namespace}-${hint.serviceName}-${hint.nodePort}`}>
+                    <Typography variant="body2" color="text.secondary">
+                      <Typography component="span" variant="body2" fontWeight="medium">
+                        {hint.serviceName}
+                      </Typography>
+                      {' · '}
+                      {hint.namespace}
+                      {' · '}
+                      <Chip label={`Port ${hint.nodePort}`} size="small" variant="outlined" sx={{ verticalAlign: 'middle', mx: 0.5 }} />
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {hint.host
+                        ? `Open at ${hint.host}:${hint.nodePort}`
+                        : `Port ${hint.nodePort} on your server (host not detected)`}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Box>
         )}
       </CardContent>

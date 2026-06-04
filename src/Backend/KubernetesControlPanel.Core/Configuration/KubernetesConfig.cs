@@ -31,7 +31,9 @@ public class KubernetesConfig
     public TimeSpan CacheTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
     /// <summary>
-    /// Public hostname or IP used to build http(s) links for NodePort services (e.g. your cluster's public IP or DNS).
+    /// Optional override for NodePort link host (wins over auto-detection).
+    /// Also set via environment variable NODE_PORT_PUBLIC_HOST or Kubernetes__NodePortPublicHost.
+    /// When empty, the API infers a host from cluster nodes, load balancers, ingress, or the incoming request.
     /// </summary>
     public string? NodePortPublicHost { get; set; }
 

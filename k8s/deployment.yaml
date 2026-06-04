@@ -27,6 +27,9 @@ spec:
           value: "Production"
         - name: ASPNETCORE_URLS
           value: "http://+:80"
+        # Optional: set your cluster/node public IP or DNS for NodePort links on My Apps
+        # - name: NODE_PORT_PUBLIC_HOST
+        #   value: "your.public.host"
         - name: KUBERNETES_SERVICE_HOST
           valueFrom:
             fieldRef:

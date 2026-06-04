@@ -54,6 +54,7 @@ builder.Services.AddMemoryCache();
 
 // Add HTTP Client
 builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
 // Configure Kubernetes Client
 builder.Services.AddSingleton<IKubernetes>(provider =>
