@@ -262,6 +262,10 @@ public class PodsController : ControllerBase
         try
         {
             var success = await _podService.RestartPodAsync(namespaceName, podName);
+            if (!success)
+            {
+                return BadRequest(new { error = "Failed to restart pod" });
+            }
             return Ok(success);
         }
         catch (Exception ex)
@@ -308,6 +312,10 @@ public class PodsController : ControllerBase
         try
         {
             var success = await _podService.DeletePodAsync(namespaceName, podName);
+            if (!success)
+            {
+                return BadRequest(new { error = "Failed to delete pod" });
+            }
             return Ok(success);
         }
         catch (Exception ex)

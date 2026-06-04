@@ -17,7 +17,7 @@ rules:
   verbs: ["delete"]
 - apiGroups: ["apps"]
   resources: ["deployments", "replicasets", "statefulsets"]
-  verbs: ["get", "list", "watch"]
+  verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["batch"]
   resources: ["jobs", "cronjobs"]
   verbs: ["get", "list", "watch"]

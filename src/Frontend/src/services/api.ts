@@ -8,7 +8,11 @@ import {
   NamespacePodCount,
   PodMetrics,
   PodRestartResult,
-  PodResourceUsage
+  PodResourceUsage,
+  DeploymentInfo,
+  ScaleDeploymentRequest,
+  ScaleDeploymentResult,
+  ExternalLinksConfig,
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
@@ -130,6 +134,39 @@ export const namespacesApi = {
   },
   getResourceQuotas: async (namespaceName: string): Promise<any> => {
     const response = await api.get(`/namespaces/${namespaceName}/quotas`);
+    return response.data;
+  },
+};
+
+// Deployments API
+export const deploymentsApi = {
+  getAll: async (): Promise<DeploymentInfo[]> => {
+    const response = await api.get('/deployments');
+    return response.data;
+  },
+  getByNamespace: async (namespace: string): Promise<DeploymentInfo[]> => {
+    const response = await api.get(`/deployments/${namespace}`);
+    return response.data;
+  },
+  getDetails: async (namespace: string, deploymentName: string): Promise<DeploymentInfo> => {
+    const response = await api.get(`/deployments/${namespace}/${deploymentName}`);
+    return response.data;
+  },
+  scale: async (
+    namespace: string,
+    deploymentName: string,
+    replicas: number
+  ): Promise<ScaleDeploymentResult> => {
+    const body: ScaleDeploymentRequest = { replicas };
+    const response = await api.put(`/deployments/${namespace}/${deploymentName}/scale`, body);
+    return response.data;
+  },
+};
+
+// External / outsider links API
+export const linksApi = {
+  getAll: async (): Promise<ExternalLinksConfig> => {
+    const response = await api.get('/links');
     return response.data;
   },
 };

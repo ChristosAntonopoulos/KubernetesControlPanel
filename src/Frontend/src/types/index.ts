@@ -143,9 +143,54 @@ export interface PodRestartResult {
   podName: string;
   namespace: string;
   restartTimestamp: string;
-  message?: string;
+  errorMessage?: string;
   previousPodUid?: string;
   newPodUid?: string;
+}
+
+export interface DeploymentInfo {
+  name: string;
+  namespace: string;
+  replicas: number;
+  readyReplicas: number;
+  availableReplicas: number;
+  updatedReplicas: number;
+  creationTimestamp: string;
+  labels: Record<string, string>;
+  status: string;
+}
+
+export interface ScaleDeploymentRequest {
+  replicas: number;
+}
+
+export interface ScaleDeploymentResult {
+  success: boolean;
+  name: string;
+  namespace: string;
+  previousReplicas: number;
+  newReplicas: number;
+  errorMessage?: string;
+}
+
+export interface ExternalLinkItem {
+  title: string;
+  url: string;
+  description?: string;
+  icon: string;
+  openInNewTab: boolean;
+  tags: string[];
+}
+
+export interface ExternalLinkCategory {
+  name: string;
+  description?: string;
+  icon: string;
+  links: ExternalLinkItem[];
+}
+
+export interface ExternalLinksConfig {
+  categories: ExternalLinkCategory[];
 }
 
 export interface PodResourceUsage {

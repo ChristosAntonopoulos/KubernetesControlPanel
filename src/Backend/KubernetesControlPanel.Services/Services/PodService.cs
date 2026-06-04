@@ -154,12 +154,19 @@ public class PodService : IPodService
         }
     }
 
+    private static V1DeleteOptions ImmediatePodDeleteOptions => new()
+    {
+        GracePeriodSeconds = 0,
+        PropagationPolicy = "Background"
+    };
+
     public async Task<bool> RestartPodAsync(string namespaceName, string podName)
     {
         try
         {
             // Delete the pod to trigger a restart (assuming it's managed by a deployment/replicaset)
-            await _kubernetesClient.CoreV1.DeleteNamespacedPodAsync(podName, namespaceName);
+            await _kubernetesClient.CoreV1.DeleteNamespacedPodAsync(
+                podName, namespaceName, body: ImmediatePodDeleteOptions);
             _logger.LogInformation("Pod {PodName} in namespace {Namespace} restarted successfully", podName, namespaceName);
             return true;
         }
@@ -203,7 +210,8 @@ public class PodService : IPodService
             result.PreRestartLogs = await GetPodLogsAsync(namespaceName, podName, null, 1000);
 
             // Perform the restart
-            await _kubernetesClient.CoreV1.DeleteNamespacedPodAsync(podName, namespaceName);
+            await _kubernetesClient.CoreV1.DeleteNamespacedPodAsync(
+                podName, namespaceName, body: ImmediatePodDeleteOptions);
 
             // Wait a bit for the new pod to be created
             await Task.Delay(2000);
@@ -236,7 +244,8 @@ public class PodService : IPodService
     {
         try
         {
-            await _kubernetesClient.CoreV1.DeleteNamespacedPodAsync(podName, namespaceName);
+            await _kubernetesClient.CoreV1.DeleteNamespacedPodAsync(
+                podName, namespaceName, body: ImmediatePodDeleteOptions);
             _logger.LogInformation("Pod {PodName} in namespace {Namespace} deleted successfully", podName, namespaceName);
             return true;
         }

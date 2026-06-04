@@ -20,6 +20,8 @@ import {
   Storage as PodsIcon,
   Computer as NodesIcon,
   Folder as NamespacesIcon,
+  Apps as DeploymentsIcon,
+  Public as ExternalLinksIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -32,8 +34,10 @@ interface LayoutProps {
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { text: 'Pods', icon: <PodsIcon />, path: '/pods' },
+  { text: 'Deployments', icon: <DeploymentsIcon />, path: '/deployments' },
   { text: 'Nodes', icon: <NodesIcon />, path: '/nodes' },
   { text: 'Namespaces', icon: <NamespacesIcon />, path: '/namespaces' },
+  { text: 'External Links', icon: <ExternalLinksIcon />, path: '/links' },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {

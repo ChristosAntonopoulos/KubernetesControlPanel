@@ -187,7 +187,6 @@ const Pods: React.FC = () => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setSelectedPod(null);
   };
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
@@ -256,38 +255,53 @@ const Pods: React.FC = () => {
 
   const confirmRestart = async (withLogs: boolean = false) => {
     if (!selectedPod) return;
-    
+
     setIsRestarting(true);
     try {
-      const result = await podsApi.restart(selectedPod.namespace, selectedPod.name);
-      
-      if (result) {
-        showSnackbar(`Pod restarted successfully${withLogs ? ' with logs' : ''}`, 'success');
-        queryClient.invalidateQueries({ queryKey: ['pods'] });
+      if (withLogs) {
+        const result = await podsApi.restartWithLogs(selectedPod.namespace, selectedPod.name);
+        if (result.success) {
+          showSnackbar('Pod restarted successfully with log backup', 'success');
+          queryClient.invalidateQueries({ queryKey: ['pods'] });
+        } else {
+          showSnackbar(result.errorMessage || 'Failed to restart pod', 'error');
+        }
       } else {
-        showSnackbar('Failed to restart pod', 'error');
+        const result = await podsApi.restart(selectedPod.namespace, selectedPod.name);
+        if (result) {
+          showSnackbar('Pod restarted successfully', 'success');
+          queryClient.invalidateQueries({ queryKey: ['pods'] });
+        } else {
+          showSnackbar('Failed to restart pod', 'error');
+        }
       }
-    } catch (error) {
+    } catch {
       showSnackbar('Failed to restart pod', 'error');
     } finally {
       setIsRestarting(false);
       setRestartConfirmOpen(false);
+      setSelectedPod(null);
     }
   };
 
   const confirmDelete = async () => {
     if (!selectedPod) return;
-    
+
     setIsDeleting(true);
     try {
-      await podsApi.delete(selectedPod.namespace, selectedPod.name);
-      showSnackbar('Pod deleted successfully', 'success');
-      queryClient.invalidateQueries({ queryKey: ['pods'] });
-    } catch (error) {
+      const success = await podsApi.delete(selectedPod.namespace, selectedPod.name);
+      if (success) {
+        showSnackbar('Pod deleted successfully', 'success');
+        queryClient.invalidateQueries({ queryKey: ['pods'] });
+      } else {
+        showSnackbar('Failed to delete pod', 'error');
+      }
+    } catch {
       showSnackbar('Failed to delete pod', 'error');
     } finally {
       setIsDeleting(false);
       setDeleteConfirmOpen(false);
+      setSelectedPod(null);
     }
   };
 

@@ -68,10 +68,13 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPodService, PodService>();
 builder.Services.AddScoped<INodeService, NodeService>();
 builder.Services.AddScoped<INamespaceService, NamespaceService>();
+builder.Services.AddScoped<IDeploymentService, DeploymentService>();
+builder.Services.AddScoped<ILinksService, LinksService>();
 builder.Services.AddScoped<IMetricsProvider, MetricsProvider>();
 
 // Add Configuration
 builder.Services.Configure<KubernetesConfig>(builder.Configuration.GetSection("Kubernetes"));
+builder.Services.Configure<ExternalLinksConfig>(builder.Configuration.GetSection(ExternalLinksConfig.SectionName));
 
 var app = builder.Build();
 
