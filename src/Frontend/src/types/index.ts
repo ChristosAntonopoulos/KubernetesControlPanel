@@ -231,6 +231,130 @@ export interface ClusterAccessOverview {
   lastUpdated: string;
 }
 
+// Discovered apps (portfolio + admin)
+export interface AppUrl {
+  url: string;
+  label: string;
+  source: string;
+  openInNewTab: boolean;
+}
+
+export interface AppComponent {
+  name: string;
+  type: string;
+  userStatus: string;
+  adminStatus: string;
+  readyReplicas: number;
+  totalReplicas: number;
+}
+
+export interface DiscoveredApp {
+  appKey: string;
+  displayName: string;
+  description: string;
+  namespace: string;
+  environment: string;
+  owner: string;
+  userStatus: string;
+  adminStatus: string;
+  statusReason?: string;
+  readyComponents: number;
+  totalComponents: number;
+  readyPods: number;
+  totalPods: number;
+  primaryUrl?: string;
+  urls: AppUrl[];
+  components: AppComponent[];
+  isSystem: boolean;
+  lastChange?: string;
+  icon?: string;
+  accentColor: string;
+  tags: string[];
+  labels: Record<string, string>;
+  availabilitySummary?: string;
+}
+
+export interface AppSummaryStats {
+  total: number;
+  healthy: number;
+  degraded: number;
+  offline: number;
+  starting: number;
+  unknown: number;
+}
+
+export interface AppListResponse {
+  apps: DiscoveredApp[];
+  summary: AppSummaryStats;
+  lastUpdated: string;
+}
+
+export interface AppAdminOverview {
+  headline: string;
+  reason?: string;
+  affectedComponent?: string;
+  recentWarning?: string;
+  suggestedSteps: string[];
+}
+
+export interface AppWorkloadInfo {
+  name: string;
+  namespace: string;
+  type: string;
+  status: string;
+  replicas: number;
+  readyReplicas: number;
+  image: string;
+  creationTimestamp: string;
+}
+
+export interface AppServiceInfo {
+  name: string;
+  namespace: string;
+  type: string;
+  clusterIP?: string;
+  ports: string;
+  selector: string;
+  matchedPods: number;
+}
+
+export interface AppIngressInfo {
+  name: string;
+  namespace: string;
+  host: string;
+  path: string;
+  service: string;
+  port?: number;
+  tlsEnabled: boolean;
+  ingressClass?: string;
+  externalIP?: string;
+}
+
+export interface AppAdminDetail {
+  app: DiscoveredApp;
+  overview: AppAdminOverview;
+  workloads: AppWorkloadInfo[];
+  pods: PodInfo[];
+  services: AppServiceInfo[];
+  ingresses: AppIngressInfo[];
+  recentEvents: ClusterEvent[];
+  restartsLast24Hours: number;
+}
+
+export interface RestartDeploymentResult {
+  success: boolean;
+  name: string;
+  namespace: string;
+  errorMessage?: string;
+}
+
+export interface ResourceYamlResult {
+  kind: string;
+  name: string;
+  namespace: string;
+  yaml: string;
+}
+
 export interface PodResourceUsage {
   timestamp: string;
   podName: string;

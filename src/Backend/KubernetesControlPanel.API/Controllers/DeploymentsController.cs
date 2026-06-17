@@ -94,4 +94,22 @@ public class DeploymentsController : ControllerBase
             return StatusCode(500, new { error = "Failed to scale deployment" });
         }
     }
+
+    [HttpPost("{namespaceName}/{deploymentName}/restart")]
+    [ProducesResponseType(typeof(RestartDeploymentResult), 200)]
+    [ProducesResponseType(400)]
+    public async Task<ActionResult<RestartDeploymentResult>> RestartDeployment(string namespaceName, string deploymentName)
+    {
+        try
+        {
+            var result = await _deploymentService.RestartDeploymentAsync(namespaceName, deploymentName);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error restarting deployment {Name}", deploymentName);
+            return StatusCode(500, new { error = "Failed to restart deployment" });
+        }
+    }
 }

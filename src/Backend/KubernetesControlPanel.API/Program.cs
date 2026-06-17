@@ -72,6 +72,8 @@ builder.Services.AddScoped<INamespaceService, NamespaceService>();
 builder.Services.AddScoped<IDeploymentService, DeploymentService>();
 builder.Services.AddScoped<ILinksService, LinksService>();
 builder.Services.AddScoped<IAccessService, AccessService>();
+builder.Services.AddScoped<IAppDiscoveryService, AppDiscoveryService>();
+builder.Services.AddScoped<AppUrlResolver>();
 builder.Services.AddScoped<IMetricsProvider, MetricsProvider>();
 
 // Add Configuration

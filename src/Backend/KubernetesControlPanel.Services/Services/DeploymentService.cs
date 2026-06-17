@@ -102,6 +102,38 @@ public class DeploymentService : IDeploymentService
         return result;
     }
 
+    public async Task<RestartDeploymentResult> RestartDeploymentAsync(string namespaceName, string deploymentName)
+    {
+        var result = new RestartDeploymentResult
+        {
+            Name = deploymentName,
+            Namespace = namespaceName
+        };
+
+        try
+        {
+            var deployment = await _kubernetesClient.AppsV1.ReadNamespacedDeploymentAsync(deploymentName, namespaceName);
+            deployment.Spec ??= new V1DeploymentSpec();
+            deployment.Spec.Template ??= new V1PodTemplateSpec();
+            deployment.Spec.Template.Metadata ??= new V1ObjectMeta();
+            deployment.Spec.Template.Metadata.Annotations ??= new Dictionary<string, string>();
+            deployment.Spec.Template.Metadata.Annotations["kubectl.kubernetes.io/restartedAt"] =
+                DateTime.UtcNow.ToString("O");
+
+            await _kubernetesClient.AppsV1.ReplaceNamespacedDeploymentAsync(deployment, deploymentName, namespaceName);
+            result.Success = true;
+            _logger.LogInformation("Restarted deployment {Name} in {Namespace}", deploymentName, namespaceName);
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.ErrorMessage = ex.Message;
+            _logger.LogError(ex, "Error restarting deployment {Name} in {Namespace}", deploymentName, namespaceName);
+        }
+
+        return result;
+    }
+
     private static DeploymentInfo MapDeployment(V1Deployment deployment)
     {
         var status = deployment.Status;

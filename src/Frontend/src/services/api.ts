@@ -14,6 +14,11 @@ import {
   ScaleDeploymentResult,
   ExternalLinksConfig,
   ClusterAccessOverview,
+  AppListResponse,
+  DiscoveredApp,
+  AppAdminDetail,
+  RestartDeploymentResult,
+  ResourceYamlResult,
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
@@ -162,6 +167,10 @@ export const deploymentsApi = {
     const response = await api.put(`/deployments/${namespace}/${deploymentName}/scale`, body);
     return response.data;
   },
+  restart: async (namespace: string, deploymentName: string): Promise<RestartDeploymentResult> => {
+    const response = await api.post(`/deployments/${namespace}/${deploymentName}/restart`);
+    return response.data;
+  },
 };
 
 // External / outsider links API
@@ -176,6 +185,28 @@ export const linksApi = {
 export const accessApi = {
   getOverview: async (): Promise<ClusterAccessOverview> => {
     const response = await api.get('/access');
+    return response.data;
+  },
+};
+
+export const appsApi = {
+  getAll: async (): Promise<AppListResponse> => {
+    const response = await api.get('/apps');
+    return response.data;
+  },
+  getDetail: async (namespace: string, appKey: string): Promise<DiscoveredApp> => {
+    const response = await api.get(`/apps/${encodeURIComponent(namespace)}/${encodeURIComponent(appKey)}`);
+    return response.data;
+  },
+  getAdmin: async (namespace: string, appKey: string): Promise<AppAdminDetail> => {
+    const response = await api.get(`/apps/${encodeURIComponent(namespace)}/${encodeURIComponent(appKey)}/admin`);
+    return response.data;
+  },
+};
+
+export const resourcesApi = {
+  getYaml: async (namespace: string, kind: string, name: string): Promise<ResourceYamlResult> => {
+    const response = await api.get(`/resources/${encodeURIComponent(namespace)}/${kind}/${encodeURIComponent(name)}/yaml`);
     return response.data;
   },
 };

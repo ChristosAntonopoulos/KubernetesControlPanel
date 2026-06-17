@@ -12,7 +12,8 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  useTheme,
+  ListSubheader,
+  Divider,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -21,8 +22,8 @@ import {
   Computer as NodesIcon,
   Folder as NamespacesIcon,
   Apps as DeploymentsIcon,
-  Public as ExternalLinksIcon,
   Web as MyAppsIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -32,30 +33,25 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+const portalItems = [
   { text: 'My Apps', icon: <MyAppsIcon />, path: '/apps' },
+];
+
+const operationsItems = [
+  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Pods', icon: <PodsIcon />, path: '/pods' },
   { text: 'Deployments', icon: <DeploymentsIcon />, path: '/deployments' },
   { text: 'Nodes', icon: <NodesIcon />, path: '/nodes' },
   { text: 'Namespaces', icon: <NamespacesIcon />, path: '/namespaces' },
-  { text: 'External Links', icon: <ExternalLinksIcon />, path: '/links' },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    setMobileOpen(false);
-  };
+  const isSelected = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const drawer = (
     <div>
@@ -64,13 +60,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           K8s Control Panel
         </Typography>
       </Toolbar>
-      <List>
-        {menuItems.map((item) => (
+      <List subheader={<ListSubheader>Portal</ListSubheader>}>
+        {portalItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
-            >
+            <ListItemButton selected={isSelected(item.path)} onClick={() => { navigate(item.path); setMobileOpen(false); }}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <List subheader={<ListSubheader>Operations</ListSubheader>}>
+        {operationsItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton selected={isSelected(item.path)} onClick={() => { navigate(item.path); setMobileOpen(false); }}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
@@ -79,6 +83,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </List>
     </div>
   );
+
+  const isPortalPage = location.pathname.startsWith('/apps');
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -95,41 +101,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             color="inherit"
             aria-label="open drawer"
             edge="start"
-            onClick={handleDrawerToggle}
+            onClick={() => setMobileOpen(!mobileOpen)}
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
+          <AdminIcon sx={{ mr: 1, display: { xs: 'none', sm: 'block' }, opacity: 0.8 }} />
           <Typography variant="h6" noWrap component="div">
-            Kubernetes Control Panel
+            {isPortalPage ? 'App Portfolio' : 'Kubernetes Control Panel'}
           </Typography>
         </Toolbar>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { width: drawerWidth } }}
         >
           {drawer}
         </Drawer>
         <Drawer
           variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
+          sx={{ display: { xs: 'none', sm: 'block' }, '& .MuiDrawer-paper': { width: drawerWidth } }}
           open
         >
           {drawer}
@@ -141,6 +136,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          bgcolor: isPortalPage ? 'background.default' : undefined,
         }}
       >
         <Toolbar />
@@ -150,4 +146,4 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 };
 
-export default Layout; 
+export default Layout;
