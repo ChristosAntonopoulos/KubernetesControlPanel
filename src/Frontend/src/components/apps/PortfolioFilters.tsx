@@ -2,23 +2,22 @@ import React from 'react';
 import {
   Box,
   FormControl,
-  FormControlLabel,
   InputAdornment,
   InputLabel,
   MenuItem,
   Select,
-  Switch,
   TextField,
   Typography,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 
+export type SortOption = 'name-asc' | 'name-desc' | 'status';
+
 export interface PortfolioFilterState {
   search: string;
   environment: string;
   status: string;
-  hasLink: boolean;
-  hideSystem: boolean;
+  sort: SortOption;
 }
 
 interface PortfolioFiltersProps {
@@ -40,7 +39,8 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
         mb: 3,
         p: 2,
         borderRadius: 2,
-        bgcolor: 'action.hover',
+        bgcolor: 'background.paper',
+        border: '1px solid rgba(148, 163, 184, 0.1)',
       }}
     >
       <TextField
@@ -80,26 +80,17 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
           <MenuItem value="Starting">Starting</MenuItem>
         </Select>
       </FormControl>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={filters.hasLink}
-            onChange={(e) => set({ hasLink: e.target.checked })}
-            size="small"
-          />
-        }
-        label={<Typography variant="body2">Has link</Typography>}
-      />
-      <FormControlLabel
-        control={
-          <Switch
-            checked={filters.hideSystem}
-            onChange={(e) => set({ hideSystem: e.target.checked })}
-            size="small"
-          />
-        }
-        label={<Typography variant="body2">Hide system</Typography>}
-      />
+      <FormControl size="small" sx={{ minWidth: 140 }}>
+        <InputLabel>Sort by</InputLabel>
+        <Select label="Sort by" value={filters.sort} onChange={(e) => set({ sort: e.target.value as SortOption })}>
+          <MenuItem value="name-asc">Name A-Z</MenuItem>
+          <MenuItem value="name-desc">Name Z-A</MenuItem>
+          <MenuItem value="status">Status</MenuItem>
+        </Select>
+      </FormControl>
+      <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+        Showing frontend &amp; web apps only
+      </Typography>
     </Box>
   );
 };

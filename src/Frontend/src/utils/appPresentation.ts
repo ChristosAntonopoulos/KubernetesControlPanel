@@ -5,6 +5,33 @@ export const getInitials = (name: string): string => {
   return (words[0][0] + words[1][0]).toUpperCase();
 };
 
+export const isWebOrFrontendApp = (app: {
+  displayName: string;
+  appKey: string;
+  description?: string;
+  tags?: string[];
+  components?: { name: string }[];
+  labels?: Record<string, string>;
+}): boolean => {
+  const haystack = [
+    app.displayName,
+    app.appKey,
+    app.description ?? '',
+    ...(app.tags ?? []),
+    ...(app.components ?? []).map((c) => c.name),
+    ...Object.values(app.labels ?? {}),
+  ]
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes('frontend') || haystack.includes('web');
+};
+
+export const getAppDisplayName = (app: { displayName: string; siteTitle?: string }): string =>
+  app.siteTitle?.trim() || app.displayName;
+
+export const getAppIconUrl = (app: { icon?: string; faviconUrl?: string }): string | undefined =>
+  app.faviconUrl || (app.icon?.startsWith('http') ? app.icon : undefined);
+
 export const isEmojiOrUrl = (icon?: string | null): boolean => {
   if (!icon) return false;
   if (icon.startsWith('http://') || icon.startsWith('https://')) return true;

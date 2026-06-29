@@ -18,23 +18,27 @@ public class AppDiscoveryService : IAppDiscoveryService
     private readonly IKubernetes _kubernetesClient;
     private readonly KubernetesConfig _config;
     private readonly AppUrlResolver _urlResolver;
+    private readonly ISiteMetadataService _siteMetadata;
     private readonly ILogger<AppDiscoveryService> _logger;
 
     public AppDiscoveryService(
         IKubernetes kubernetesClient,
         IOptions<KubernetesConfig> config,
         AppUrlResolver urlResolver,
+        ISiteMetadataService siteMetadata,
         ILogger<AppDiscoveryService> logger)
     {
         _kubernetesClient = kubernetesClient;
         _config = config.Value;
         _urlResolver = urlResolver;
+        _siteMetadata = siteMetadata;
         _logger = logger;
     }
 
     public async Task<AppListResponse> GetAppsAsync()
     {
         var apps = await DiscoverAppsAsync();
+        await EnrichWebAppMetadataAsync(apps);
         return new AppListResponse
         {
             Apps = apps,
@@ -484,4 +488,46 @@ public class AppDiscoveryService : IAppDiscoveryService
         InvolvedObjectName = e.InvolvedObject?.Name ?? "",
         Namespace = e.Metadata?.NamespaceProperty ?? e.InvolvedObject?.NamespaceProperty ?? ""
     };
+
+    private async Task EnrichWebAppMetadataAsync(List<DiscoveredApp> apps)
+    {
+        var targets = apps
+            .Where(IsWebOrFrontendApp)
+            .Where(a => !string.IsNullOrWhiteSpace(a.PrimaryUrl))
+            .ToList();
+
+        if (targets.Count == 0) return;
+
+        await Task.WhenAll(targets.Select(async app =>
+        {
+            try
+            {
+                var meta = await _siteMetadata.FetchAsync(app.PrimaryUrl!);
+                if (meta == null) return;
+                if (!string.IsNullOrWhiteSpace(meta.Title))
+                    app.SiteTitle = meta.Title;
+                if (!string.IsNullOrWhiteSpace(meta.FaviconUrl))
+                    app.FaviconUrl = meta.FaviconUrl;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Site metadata enrichment failed for {AppKey}", app.AppKey);
+            }
+        }));
+    }
+
+    internal static bool IsWebOrFrontendApp(DiscoveredApp app)
+    {
+        var haystack = string.Join(' ', new[]
+        {
+            app.DisplayName,
+            app.AppKey,
+            app.Description,
+            string.Join(' ', app.Tags),
+            string.Join(' ', app.Components.Select(c => c.Name)),
+            string.Join(' ', app.Labels.Values)
+        }).ToLowerInvariant();
+
+        return haystack.Contains("frontend") || haystack.Contains("web");
+    }
 }

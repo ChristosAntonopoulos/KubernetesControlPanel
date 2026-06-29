@@ -268,6 +268,8 @@ export interface DiscoveredApp {
   isSystem: boolean;
   lastChange?: string;
   icon?: string;
+  siteTitle?: string;
+  faviconUrl?: string;
   accentColor: string;
   tags: string[];
   labels: Record<string, string>;

@@ -38,6 +38,8 @@ public class DiscoveredApp
     public bool IsSystem { get; set; }
     public DateTime? LastChange { get; set; }
     public string? Icon { get; set; }
+    public string? SiteTitle { get; set; }
+    public string? FaviconUrl { get; set; }
     public string AccentColor { get; set; } = "#2563eb";
     public List<string> Tags { get; set; } = new();
     public Dictionary<string, string> Labels { get; set; } = new();

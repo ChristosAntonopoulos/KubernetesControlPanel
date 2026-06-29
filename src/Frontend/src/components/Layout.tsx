@@ -34,7 +34,7 @@ interface LayoutProps {
 }
 
 const portalItems = [
-  { text: 'My Apps', icon: <MyAppsIcon />, path: '/apps' },
+  { text: 'Apps', icon: <MyAppsIcon />, path: '/apps' },
 ];
 
 const operationsItems = [
