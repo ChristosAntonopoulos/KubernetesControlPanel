@@ -16,9 +16,11 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Stack,
 } from '@mui/material';
 import { nodesApi } from '../services/api';
 import { NodeInfo } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const formatCpu = (millicores: number) =>
   millicores >= 1000 ? `${(millicores / 1000).toFixed(2)} cores` : `${millicores}m`;
@@ -42,6 +44,8 @@ const parseCapacityMemoryToBytes = (s?: string): number => {
 };
 
 const Nodes: React.FC = () => {
+  const isMobile = useIsMobile();
+
   const { data: nodes, isLoading, error } = useQuery<NodeInfo[]>({
     queryKey: ['nodes'],
     queryFn: nodesApi.getAll,
@@ -93,18 +97,25 @@ const Nodes: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant={isMobile ? 'h5' : 'h4'} gutterBottom>
         Nodes
       </Typography>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 3 }}>
         {nodes.map((node) => (
           <Grid item xs={12} md={6} key={node.name}>
             <Card>
               <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6">{node.name}</Typography>
-                  <Box display="flex" gap={1}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems={isMobile ? 'flex-start' : 'center'}
+                  flexDirection={isMobile ? 'column' : 'row'}
+                  gap={1}
+                  mb={2}
+                >
+                  <Typography variant="h6" sx={{ wordBreak: 'break-word' }}>{node.name}</Typography>
+                  <Box display="flex" gap={1} flexWrap="wrap">
                     <Chip
                       label={node.status}
                       color={getStatusColor(node.status) as any}
@@ -216,6 +227,38 @@ const Nodes: React.FC = () => {
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Conditions
                     </Typography>
+                    {isMobile ? (
+                      <Stack spacing={1}>
+                        {node.conditions.map((condition, index) => (
+                          <Box
+                            key={index}
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              gap: 1,
+                              p: 1,
+                              borderRadius: 1,
+                              bgcolor: 'action.hover',
+                            }}
+                          >
+                            <Box minWidth={0}>
+                              <Typography variant="body2" fontWeight={500}>{condition.type}</Typography>
+                              {condition.reason && (
+                                <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+                                  {condition.reason}
+                                </Typography>
+                              )}
+                            </Box>
+                            <Chip
+                              label={condition.status}
+                              color={condition.status === 'True' ? 'success' : 'error'}
+                              size="small"
+                            />
+                          </Box>
+                        ))}
+                      </Stack>
+                    ) : (
                     <TableContainer component={Paper}>
                       <Table size="small">
                         <TableHead>
@@ -242,6 +285,7 @@ const Nodes: React.FC = () => {
                         </TableBody>
                       </Table>
                     </TableContainer>
+                    )}
                   </Box>
                 )}
               </CardContent>

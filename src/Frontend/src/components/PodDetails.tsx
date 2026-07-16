@@ -29,6 +29,7 @@ import {
   Alert,
   Tabs,
   Tab,
+  Stack,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -44,6 +45,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { podsApi } from '../services/api';
 import { PodInfo, ClusterEvent } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface PodDetailsProps {
   open: boolean;
@@ -68,12 +70,13 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`pod-details-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: { xs: 1.5, sm: 3 } }}>{children}</Box>}
     </div>
   );
 }
 
 const PodDetails: React.FC<PodDetailsProps> = ({ open, onClose, pod }) => {
+  const isMobile = useIsMobile();
   const [currentTab, setCurrentTab] = useState(0);
 
   const { data: podDetails, isLoading: detailsLoading, error: detailsError, refetch: refetchDetails } = useQuery({
@@ -130,22 +133,26 @@ const PodDetails: React.FC<PodDetailsProps> = ({ open, onClose, pod }) => {
       onClose={onClose} 
       maxWidth="lg" 
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
-        sx: { height: '90vh' }
+        sx: { height: isMobile ? '100%' : '90vh' }
       }}
     >
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" alignItems="center" gap={1}>
-            <InfoIcon />
-            <Typography variant="h6">
-              Pod Details - {pod.name}
-            </Typography>
-            <Chip 
-              label={currentPod.status} 
-              color={getStatusColor(currentPod.status) as any}
-              size="small"
-            />
+      <DialogTitle sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1}>
+          <Box display="flex" alignItems="flex-start" gap={1} minWidth={0} flex={1}>
+            <InfoIcon sx={{ mt: 0.25, flexShrink: 0 }} />
+            <Box minWidth={0}>
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ wordBreak: 'break-word' }}>
+                Pod Details - {pod.name}
+              </Typography>
+              <Chip 
+                label={currentPod.status} 
+                color={getStatusColor(currentPod.status) as any}
+                size="small"
+                sx={{ mt: 0.5 }}
+              />
+            </Box>
           </Box>
           <Box display="flex" gap={1}>
             <IconButton onClick={() => { refetchDetails(); refetchEvents(); }} size="small">
@@ -160,7 +167,14 @@ const PodDetails: React.FC<PodDetailsProps> = ({ open, onClose, pod }) => {
 
       <DialogContent sx={{ p: 0 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={currentTab} onChange={handleTabChange} aria-label="pod details tabs">
+          <Tabs
+            value={currentTab}
+            onChange={handleTabChange}
+            aria-label="pod details tabs"
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+          >
             <Tab label="Overview" />
             <Tab label="Containers" />
             <Tab label="Events" />
@@ -324,6 +338,34 @@ const PodDetails: React.FC<PodDetailsProps> = ({ open, onClose, pod }) => {
           {eventsLoading ? (
             <Typography>Loading events...</Typography>
           ) : events && events.length > 0 ? (
+            isMobile ? (
+              <Stack spacing={1}>
+                {events.map((event, index) => (
+                  <Card key={index} variant="outlined">
+                    <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                      <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                        {getEventIcon(event.type, event.reason)}
+                        <Chip
+                          label={event.type}
+                          color={event.type === 'Warning' ? 'warning' : 'default'}
+                          size="small"
+                        />
+                      </Box>
+                      <Typography variant="body2" fontWeight={500}>{event.reason}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word', mt: 0.5 }}>
+                        {event.message}
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 0.5 }}>
+                        {event.involvedObjectName} · {event.namespace}
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled">
+                        {formatTimestamp(event.timestamp)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
+            ) : (
             <TableContainer component={Paper}>
               <Table size="small">
                                   <TableHead>
@@ -361,6 +403,7 @@ const PodDetails: React.FC<PodDetailsProps> = ({ open, onClose, pod }) => {
                 </TableBody>
               </Table>
             </TableContainer>
+            )
           ) : (
             <Typography variant="body2" color="text.secondary">
               No events found for this pod

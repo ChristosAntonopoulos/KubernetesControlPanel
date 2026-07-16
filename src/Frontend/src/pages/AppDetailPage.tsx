@@ -28,8 +28,10 @@ import {
 import { appsApi } from '../services/api';
 import { getInitials, isEmojiOrUrl, formatRelativeTime } from '../utils/appPresentation';
 import { statusColor, statusLabel } from '../utils/appStatus';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const AppDetailPage: React.FC = () => {
+  const isMobile = useIsMobile();
   const { namespace, appKey } = useParams<{ namespace: string; appKey: string }>();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
@@ -58,12 +60,12 @@ const AppDetailPage: React.FC = () => {
       </Button>
 
       <Card sx={{ mb: 3, overflow: 'visible' }}>
-        <CardContent sx={{ p: 3 }}>
-          <Stack direction="row" spacing={2} alignItems="flex-start">
+        <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+          <Stack direction={isMobile ? 'column' : 'row'} spacing={2} alignItems={isMobile ? 'flex-start' : 'flex-start'}>
             <Box
               sx={{
-                width: 72,
-                height: 72,
+                width: isMobile ? 56 : 72,
+                height: isMobile ? 56 : 72,
                 borderRadius: 2,
                 bgcolor: app.accentColor,
                 display: 'flex',
@@ -83,8 +85,8 @@ const AppDetailPage: React.FC = () => {
                 getInitials(app.displayName)
               )}
             </Box>
-            <Box flex={1}>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
+            <Box flex={1} minWidth={0}>
+              <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight={700} gutterBottom sx={{ wordBreak: 'break-word' }}>
                 {app.displayName}
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
@@ -109,7 +111,7 @@ const AppDetailPage: React.FC = () => {
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 3 }}>
+          <Stack direction={isMobile ? 'column' : 'row'} spacing={1} flexWrap="wrap" sx={{ mt: 3 }}>
             {openUrl && (
               <Button
                 variant="contained"
@@ -118,13 +120,14 @@ const AppDetailPage: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 endIcon={<OpenIcon />}
+                fullWidth={isMobile}
               >
                 Open App
               </Button>
             )}
             {openUrl && (
               <Tooltip title={copied ? 'Copied!' : 'Copy URL'}>
-                <Button startIcon={<CopyIcon />} onClick={() => copyUrl(openUrl)}>
+                <Button startIcon={<CopyIcon />} onClick={() => copyUrl(openUrl)} fullWidth={isMobile}>
                   Copy URL
                 </Button>
               </Tooltip>
@@ -134,6 +137,7 @@ const AppDetailPage: React.FC = () => {
               to={`/admin/apps/${encodeURIComponent(app.namespace)}/${encodeURIComponent(app.appKey)}`}
               startIcon={<AdminIcon />}
               variant="outlined"
+              fullWidth={isMobile}
             >
               Admin View
             </Button>
@@ -150,10 +154,10 @@ const AppDetailPage: React.FC = () => {
             {app.urls.map((link) => (
               <Grid item xs={12} sm={6} key={link.url}>
                 <Card variant="outlined">
-                  <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
+                  <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                    <Box minWidth={0} flex={1}>
                       <Typography fontWeight={600}>{link.label}</Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 280, display: 'block' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all', display: 'block' }}>
                         {link.url}
                       </Typography>
                     </Box>

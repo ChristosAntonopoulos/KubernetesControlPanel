@@ -31,23 +31,20 @@ import {
   Tooltip,
   Badge,
   Snackbar,
-  Toolbar,
   Grid,
   ListItemIcon,
   ListItemText,
   Divider,
   Checkbox,
   FormControlLabel,
+  Stack,
 } from '@mui/material';
 import {
   MoreVert as MoreIcon,
   Refresh as RefreshIcon,
-  Visibility as ViewIcon,
   Delete as DeleteIcon,
   RestartAlt as RestartIcon,
   Download as DownloadIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
   CheckCircle as ReadyIcon,
   Error as ErrorIcon,
   Warning as WarningIcon,
@@ -55,14 +52,14 @@ import {
   Timeline as MetricsIcon,
   Description as LogsIcon,
   History as HistoryIcon,
-  Event as EventIcon,
 } from '@mui/icons-material';
 import { podsApi, namespacesApi, nodesApi } from '../services/api';
-import { PodInfo, PodRestartResult, PodMetrics as PodMetricsType } from '../types';
+import { PodInfo, PodMetrics as PodMetricsType } from '../types';
 import { SYSTEM_NAMESPACES, PODS_HIDE_SYSTEM_STORAGE_KEY } from '../constants';
 import LogViewer from '../components/LogViewer';
 import PodMetrics from '../components/PodMetrics';
 import PodDetails from '../components/PodDetails';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const getInitialHideSystemPods = (): boolean => {
   try {
@@ -75,6 +72,7 @@ const getInitialHideSystemPods = (): boolean => {
 const FALLBACK_EXTERNAL_PORT = process.env.REACT_APP_EXTERNAL_PORT || '30080';
 
 const Pods: React.FC = () => {
+  const isMobile = useIsMobile();
   const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [hideSystemPods, setHideSystemPods] = useState<boolean>(getInitialHideSystemPods);
@@ -181,6 +179,8 @@ const Pods: React.FC = () => {
   });
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, pod: PodInfo) => {
+    event.preventDefault();
+    event.stopPropagation();
     setAnchorEl(event.currentTarget);
     setSelectedPod(pod);
   };
@@ -188,6 +188,19 @@ const Pods: React.FC = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+
+  const openPodDetails = (pod: PodInfo) => {
+    setSelectedPod(pod);
+    setDetailsOpen(true);
+  };
+
+  const getExternalPort = (pod: PodInfo) => {
+    if (!pod.nodeName || !nodeToExternalIP[pod.nodeName]) return '-';
+    if (pod.nodePorts && pod.nodePorts.length > 0) return pod.nodePorts.join(', ');
+    return FALLBACK_EXTERNAL_PORT;
+  };
+
+  const getPodMetrics = (pod: PodInfo) => metricsByPod[`${pod.namespace}/${pod.name}`];
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
     setSnackbar({ open: true, message, severity });
@@ -383,61 +396,166 @@ const Pods: React.FC = () => {
     );
   }
 
+  const renderMobilePodCard = (pod: PodInfo) => {
+    const metrics = getPodMetrics(pod);
+    return (
+      <Card key={`${pod.namespace}-${pod.name}`} variant="outlined">
+        <CardContent sx={{ pb: '12px !important' }}>
+          <Box display="flex" alignItems="flex-start" gap={1} mb={1.5}>
+            <Box sx={{ mt: 0.25 }}>{getPhaseIcon(pod.phase, pod.status)}</Box>
+            <Box flex={1} minWidth={0}>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => openPodDetails(pod)}
+                sx={{
+                  minWidth: 0,
+                  p: 0,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  color: 'primary.main',
+                  justifyContent: 'flex-start',
+                  textAlign: 'left',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.3,
+                  '&:hover': { textDecoration: 'underline', backgroundColor: 'transparent' },
+                }}
+              >
+                {pod.name}
+              </Button>
+              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.75 }}>
+                <Chip label={pod.namespace} size="small" variant="outlined" />
+                <Chip
+                  label={pod.status}
+                  color={getStatusColor(pod.status) as any}
+                  size="small"
+                />
+                <Chip
+                  label={pod.isReady ? 'Ready' : 'Not ready'}
+                  color={pod.isReady ? 'success' : 'error'}
+                  size="small"
+                  variant="outlined"
+                />
+              </Stack>
+            </Box>
+            <IconButton
+              size="small"
+              aria-label="pod actions"
+              onClick={(e) => handleMenuOpen(e, pod)}
+              disabled={isRestarting || isDeleting}
+              sx={{ mt: -0.5 }}
+            >
+              <MoreIcon />
+            </IconButton>
+          </Box>
+
+          <Grid container spacing={1.25}>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">Node</Typography>
+              <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>{pod.nodeName || '-'}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">Age</Typography>
+              <Typography variant="body2">
+                {new Date(pod.creationTimestamp).toLocaleDateString()}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">CPU</Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                {metrics ? formatCpu(metrics.totalCpuUsage) : '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">Memory</Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                {metrics ? formatBytes(metrics.totalMemoryUsage) : '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">Restarts</Typography>
+              <Typography variant="body2">{pod.restartCount}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">Pod IP</Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {pod.podIP || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">External IP</Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {(pod.nodeName && nodeToExternalIP[pod.nodeName]) || '-'}
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="caption" color="text.secondary" display="block">External Port</Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                {getExternalPort(pod)}
+              </Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Pods Management</Typography>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems={isMobile ? 'flex-start' : 'center'}
+        flexDirection={isMobile ? 'column' : 'row'}
+        gap={isMobile ? 1.5 : 0}
+        mb={3}
+      >
+        <Typography variant={isMobile ? 'h5' : 'h4'}>Pods Management</Typography>
         <Button
           variant="outlined"
           startIcon={<RefreshIcon />}
           onClick={() => refetch()}
           disabled={isLoading}
+          fullWidth={isMobile}
         >
           Refresh
         </Button>
       </Box>
 
       {/* Statistics Cards */}
-      <Box display="flex" gap={2} mb={3}>
-        <Card sx={{ minWidth: 120 }}>
-          <CardContent sx={{ textAlign: 'center', py: 2 }}>
-            <Typography variant="h6" color="primary">{podStats.total}</Typography>
-            <Typography variant="body2" color="text.secondary">Total</Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ minWidth: 120 }}>
-          <CardContent sx={{ textAlign: 'center', py: 2 }}>
-            <Typography variant="h6" color="success.main">{podStats.running}</Typography>
-            <Typography variant="body2" color="text.secondary">Running</Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ minWidth: 120 }}>
-          <CardContent sx={{ textAlign: 'center', py: 2 }}>
-            <Typography variant="h6" color="warning.main">{podStats.pending}</Typography>
-            <Typography variant="body2" color="text.secondary">Pending</Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ minWidth: 120 }}>
-          <CardContent sx={{ textAlign: 'center', py: 2 }}>
-            <Typography variant="h6" color="error.main">{podStats.failed}</Typography>
-            <Typography variant="body2" color="text.secondary">Failed</Typography>
-          </CardContent>
-        </Card>
-      </Box>
+      <Grid container spacing={1.5} mb={3}>
+        {[
+          { label: 'Total', value: podStats.total, color: 'primary.main' },
+          { label: 'Running', value: podStats.running, color: 'success.main' },
+          { label: 'Pending', value: podStats.pending, color: 'warning.main' },
+          { label: 'Failed', value: podStats.failed, color: 'error.main' },
+        ].map((stat) => (
+          <Grid item xs={6} sm={3} key={stat.label}>
+            <Card>
+              <CardContent sx={{ textAlign: 'center', py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                <Typography variant="h6" sx={{ color: stat.color }}>{stat.value}</Typography>
+                <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+          <Box display="flex" gap={2} alignItems={isMobile ? 'stretch' : 'center'} flexWrap="wrap" flexDirection={isMobile ? 'column' : 'row'}>
             <TextField
               label="Search pods"
               variant="outlined"
               size="small"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{ minWidth: 250 }}
+              sx={{ minWidth: isMobile ? 0 : 250, width: isMobile ? '100%' : 'auto' }}
             />
-            <FormControl size="small" sx={{ minWidth: 200 }}>
+            <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 200, width: isMobile ? '100%' : 'auto' }}>
               <InputLabel>Namespace</InputLabel>
               <Select
                 value={selectedNamespace}
@@ -462,7 +580,7 @@ const Pods: React.FC = () => {
               }
               label="Hide system pods"
             />
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ ml: isMobile ? 0 : 'auto' }}>
               {displayedPods.length} pod(s) found
               {hideSystemPods && systemPodsHiddenCount > 0 && (
                 <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
@@ -474,7 +592,7 @@ const Pods: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Pods Table or Empty State */}
+      {/* Pods list / table or empty state */}
       {displayedPods.length === 0 ? (
         <Card>
           <CardContent sx={{ py: 6, textAlign: 'center' }}>
@@ -486,6 +604,10 @@ const Pods: React.FC = () => {
             </Typography>
           </CardContent>
         </Card>
+      ) : isMobile ? (
+        <Stack spacing={1.5}>
+          {displayedPods.map(renderMobilePodCard)}
+        </Stack>
       ) : (
       <TableContainer component={Paper} sx={{ fontSize: '0.8rem' }}>
         <Table size="small">
@@ -509,7 +631,9 @@ const Pods: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {displayedPods.map((pod) => (
+            {displayedPods.map((pod) => {
+              const metrics = getPodMetrics(pod);
+              return (
               <TableRow key={`${pod.namespace}-${pod.name}`} hover>
                 <TableCell sx={{ fontSize: '0.8rem' }}>
                   <Box display="flex" alignItems="center" gap={1}>
@@ -517,10 +641,7 @@ const Pods: React.FC = () => {
                     <Button
                       variant="text"
                       size="small"
-                      onClick={() => {
-                        setSelectedPod(pod);
-                        setDetailsOpen(true);
-                      }}
+                      onClick={() => openPodDetails(pod)}
                       sx={{
                         minWidth: 0,
                         p: 0,
@@ -579,11 +700,7 @@ const Pods: React.FC = () => {
                   )}
                 </TableCell>
                 <TableCell align="center" sx={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                  {pod.nodeName && nodeToExternalIP[pod.nodeName]
-                    ? (pod.nodePorts && pod.nodePorts.length > 0
-                        ? pod.nodePorts.join(', ')
-                        : FALLBACK_EXTERNAL_PORT)
-                    : '-'}
+                  {getExternalPort(pod)}
                 </TableCell>
                 <TableCell align="center" sx={{ fontSize: '0.8rem' }}>
                   <Chip
@@ -604,14 +721,10 @@ const Pods: React.FC = () => {
                   </Badge>
                 </TableCell>
                 <TableCell sx={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                  {metricsByPod[`${pod.namespace}/${pod.name}`]
-                    ? formatCpu(metricsByPod[`${pod.namespace}/${pod.name}`].totalCpuUsage)
-                    : '-'}
+                  {metrics ? formatCpu(metrics.totalCpuUsage) : '-'}
                 </TableCell>
                 <TableCell sx={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
-                  {metricsByPod[`${pod.namespace}/${pod.name}`]
-                    ? formatBytes(metricsByPod[`${pod.namespace}/${pod.name}`].totalMemoryUsage)
-                    : '-'}
+                  {metrics ? formatBytes(metrics.totalMemoryUsage) : '-'}
                 </TableCell>
                 <TableCell sx={{ fontSize: '0.8rem' }}>
                   <Tooltip title={new Date(pod.creationTimestamp).toLocaleString()}>
@@ -623,6 +736,7 @@ const Pods: React.FC = () => {
                 <TableCell align="center">
                   <IconButton
                     size="small"
+                    aria-label="pod actions"
                     onClick={(e) => handleMenuOpen(e, pod)}
                     disabled={isRestarting || isDeleting}
                   >
@@ -630,7 +744,8 @@ const Pods: React.FC = () => {
                   </IconButton>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -641,8 +756,11 @@ const Pods: React.FC = () => {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
+        disableScrollLock
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{
-          sx: { minWidth: 200 }
+          sx: { minWidth: 200 },
         }}
       >
         <MenuItem onClick={handleViewDetails}>
@@ -732,10 +850,13 @@ const Pods: React.FC = () => {
         onClose={() => setLogsDialogOpen(false)}
         maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle>
-          Pod Logs: {selectedPod?.name}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+        <DialogTitle sx={{ px: { xs: 2, sm: 3 } }}>
+          <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ wordBreak: 'break-word', mb: 1 }}>
+            Pod Logs: {selectedPod?.name}
+          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
             <Typography variant="subtitle2" color="textSecondary">
               {selectedPod?.namespace}
             </Typography>
@@ -743,12 +864,13 @@ const Pods: React.FC = () => {
               startIcon={<DownloadIcon />}
               onClick={handleDownloadLogs}
               disabled={!logs}
+              size="small"
             >
               Download
             </Button>
           </Box>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ px: { xs: 1.5, sm: 3 } }}>
           {loadingLogs ? (
             <LinearProgress />
           ) : (
@@ -758,10 +880,12 @@ const Pods: React.FC = () => {
                 backgroundColor: 'background.default',
                 p: 2,
                 borderRadius: 1,
-                maxHeight: 400,
+                maxHeight: isMobile ? 'calc(100vh - 180px)' : 400,
                 overflow: 'auto',
                 fontFamily: 'monospace',
                 fontSize: '0.875rem',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
               }}
             >
               {logs || 'No logs available'}

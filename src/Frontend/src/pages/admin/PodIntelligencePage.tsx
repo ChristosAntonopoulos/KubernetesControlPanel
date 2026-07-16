@@ -18,8 +18,10 @@ import {
 import { ArrowBack as BackIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { podsApi, resourcesApi } from '../../services/api';
 import LogViewer from '../../components/LogViewer';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const PodIntelligencePage: React.FC = () => {
+  const isMobile = useIsMobile();
   const { namespace, podName } = useParams<{ namespace: string; podName: string }>();
   const navigate = useNavigate();
   const [tab, setTab] = useState(0);
@@ -65,24 +67,27 @@ const PodIntelligencePage: React.FC = () => {
       </Button>
 
       <Box display="flex" flexWrap="wrap" justifyContent="space-between" alignItems="flex-start" gap={2} sx={{ mb: 3 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>{pod.name}</Typography>
-          <Typography variant="body2" color="text.secondary">
+        <Box flex={1} minWidth={0}>
+          <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} sx={{ wordBreak: 'break-word' }}>
+            {pod.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
             Namespace: {pod.namespace} · Status: {pod.status} · Node: {pod.nodeName ?? '—'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Pod IP: {pod.podIP ?? '—'} · Restarts: {pod.restartCount}
           </Typography>
         </Box>
-        <Box display="flex" gap={1} flexWrap="wrap">
-          <Button variant="contained" onClick={() => setShowLogs(true)}>Stream logs</Button>
-          <Button variant="outlined" onClick={loadYaml}>View YAML</Button>
+        <Box display="flex" gap={1} flexWrap="wrap" flexDirection={isMobile ? 'column' : 'row'} sx={{ width: isMobile ? '100%' : 'auto' }}>
+          <Button variant="contained" onClick={() => setShowLogs(true)} fullWidth={isMobile}>Stream logs</Button>
+          <Button variant="outlined" onClick={loadYaml} fullWidth={isMobile}>View YAML</Button>
           <Button
             color="error"
             startIcon={<DeleteIcon />}
             onClick={() => {
               if (window.confirm(`Delete pod ${pod.name}?`)) deleteMutation.mutate();
             }}
+            fullWidth={isMobile}
           >
             Delete pod
           </Button>
@@ -97,7 +102,14 @@ const PodIntelligencePage: React.FC = () => {
         </Alert>
       )}
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{ mb: 2 }}
+      >
         <Tab label="Overview" />
         <Tab label="Containers" />
         <Tab label="Events" />
@@ -115,8 +127,10 @@ const PodIntelligencePage: React.FC = () => {
                 </Typography>
                 {pod.containers.map((c) => (
                   <Box key={c.name} sx={{ mt: 1 }}>
-                    <Chip label={c.name} size="small" sx={{ mr: 1 }} />
-                    <Typography component="span" variant="body2">{c.state} — {c.image}</Typography>
+                    <Chip label={c.name} size="small" sx={{ mr: 1, mb: 0.5 }} />
+                    <Typography component="span" variant="body2" sx={{ wordBreak: 'break-word' }}>
+                      {c.state} — {c.image}
+                    </Typography>
                   </Box>
                 ))}
               </CardContent>
@@ -164,7 +178,7 @@ const PodIntelligencePage: React.FC = () => {
         <Card>
           <CardContent>
             {yaml ? (
-              <Box component="pre" sx={{ overflow: 'auto', fontSize: 12, maxHeight: 500, m: 0 }}>{yaml}</Box>
+              <Box component="pre" sx={{ overflow: 'auto', fontSize: 12, maxHeight: isMobile ? 400 : 500, m: 0, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{yaml}</Box>
             ) : (
               <Button onClick={loadYaml}>Load YAML</Button>
             )}

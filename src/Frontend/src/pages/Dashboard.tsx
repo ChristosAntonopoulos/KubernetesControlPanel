@@ -25,6 +25,7 @@ import {
   ListItemText,
   ListItemIcon,
   Link,
+  Stack,
 } from '@mui/material';
 import {
   CheckCircle as HealthyIcon,
@@ -42,8 +43,10 @@ import {
 import { dashboardApi } from '../services/api';
 import { DashboardInfo } from '../types';
 import { SYSTEM_NAMESPACES } from '../constants';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const Dashboard: React.FC = () => {
+  const isMobile = useIsMobile();
   const { data: dashboardInfo, isLoading, error, refetch } = useQuery<DashboardInfo>({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
@@ -122,7 +125,7 @@ const Dashboard: React.FC = () => {
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Cluster Dashboard</Typography>
+        <Typography variant={isMobile ? 'h5' : 'h4'}>Cluster Dashboard</Typography>
         <Tooltip title="Refresh">
           <IconButton onClick={() => refetch()}>
             <RefreshIcon />
@@ -356,6 +359,29 @@ const Dashboard: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Top Namespaces by Pod Count
               </Typography>
+              {isMobile ? (
+                <Stack spacing={1}>
+                  {dashboardInfo.namespacePodDistribution.slice(0, 5).map((ns) => (
+                    <Card key={ns.namespace} variant="outlined">
+                      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                        <Chip label={ns.namespace} size="small" variant="outlined" sx={{ mb: 1 }} />
+                        <Box display="flex" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">Total</Typography>
+                          <Typography variant="body2" fontWeight="medium">{ns.podCount}</Typography>
+                        </Box>
+                        <Box display="flex" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">Running</Typography>
+                          <Typography variant="body2" color="success.main">{ns.runningPods}</Typography>
+                        </Box>
+                        <Box display="flex" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">Failed</Typography>
+                          <Typography variant="body2" color="error.main">{ns.failedPods}</Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
+              ) : (
               <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
@@ -392,6 +418,7 @@ const Dashboard: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              )}
             </CardContent>
           </Card>
         </Grid>

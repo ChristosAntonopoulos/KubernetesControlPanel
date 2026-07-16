@@ -1,15 +1,19 @@
 import React from 'react';
 import { Box, Chip, Typography } from '@mui/material';
 import { AutoAwesome as BannerIcon } from '@mui/icons-material';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface PortfolioHeroProps {
   appCount: number;
   lastUpdated?: string;
 }
 
-const PortfolioHero: React.FC<PortfolioHeroProps> = ({ appCount, lastUpdated }) => (
+const PortfolioHero: React.FC<PortfolioHeroProps> = ({ appCount, lastUpdated }) => {
+  const isMobile = useIsMobile();
+
+  return (
   <Box sx={{ mb: 3 }}>
-    <Typography variant="h4" gutterBottom>
+    <Typography variant={isMobile ? 'h5' : 'h4'} gutterBottom>
       Web Apps
     </Typography>
     <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 720, mb: 2.5 }}>
@@ -54,6 +58,7 @@ const PortfolioHero: React.FC<PortfolioHeroProps> = ({ appCount, lastUpdated }) 
       </Typography>
     )}
   </Box>
-);
+  );
+};
 
 export default PortfolioHero;

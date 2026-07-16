@@ -8,6 +8,7 @@ import {
   Layers as EnvIcon,
 } from '@mui/icons-material';
 import { AppSummaryStats } from '../../types';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface PortfolioSummaryStripProps {
   summary: AppSummaryStats;
@@ -22,11 +23,11 @@ interface StatCardProps {
   icon: React.ReactNode;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, color, glow, icon }) => (
+const StatCard: React.FC<StatCardProps & { compact?: boolean }> = ({ label, value, color, glow, icon, compact }) => (
   <Box
     sx={{
-      flex: '1 1 140px',
-      minWidth: 130,
+      flex: compact ? '1 1 calc(50% - 8px)' : '1 1 140px',
+      minWidth: compact ? 0 : 130,
       p: 2,
       borderRadius: 2,
       bgcolor: 'background.paper',
@@ -62,14 +63,18 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, color, glow, icon }) 
   </Box>
 );
 
-const PortfolioSummaryStrip: React.FC<PortfolioSummaryStripProps> = ({ summary, environmentCount }) => (
-  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-    <StatCard label="Total Apps" value={summary.total} color="#3b82f6" glow="rgba(59,130,246,0.08)" icon={<AppsIcon />} />
-    <StatCard label="Healthy" value={summary.healthy} color="#4ade80" glow="rgba(74,222,128,0.08)" icon={<HealthyIcon />} />
-    <StatCard label="Degraded" value={summary.degraded} color="#fbbf24" glow="rgba(251,191,36,0.08)" icon={<DegradedIcon />} />
-    <StatCard label="Offline" value={summary.offline} color="#f87171" glow="rgba(248,113,113,0.08)" icon={<OfflineIcon />} />
-    <StatCard label="Environments" value={environmentCount} color="#a78bfa" glow="rgba(167,139,250,0.08)" icon={<EnvIcon />} />
+const PortfolioSummaryStrip: React.FC<PortfolioSummaryStripProps> = ({ summary, environmentCount }) => {
+  const isMobile = useIsMobile();
+
+  return (
+  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: isMobile ? 1.5 : 2, mb: 3 }}>
+    <StatCard compact={isMobile} label="Total Apps" value={summary.total} color="#3b82f6" glow="rgba(59,130,246,0.08)" icon={<AppsIcon />} />
+    <StatCard compact={isMobile} label="Healthy" value={summary.healthy} color="#4ade80" glow="rgba(74,222,128,0.08)" icon={<HealthyIcon />} />
+    <StatCard compact={isMobile} label="Degraded" value={summary.degraded} color="#fbbf24" glow="rgba(251,191,36,0.08)" icon={<DegradedIcon />} />
+    <StatCard compact={isMobile} label="Offline" value={summary.offline} color="#f87171" glow="rgba(248,113,113,0.08)" icon={<OfflineIcon />} />
+    <StatCard compact={isMobile} label="Environments" value={environmentCount} color="#a78bfa" glow="rgba(167,139,250,0.08)" icon={<EnvIcon />} />
   </Box>
-);
+  );
+};
 
 export default PortfolioSummaryStrip;

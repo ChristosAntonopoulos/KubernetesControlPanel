@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 export type SortOption = 'name-asc' | 'name-desc' | 'status';
 
@@ -27,6 +28,7 @@ interface PortfolioFiltersProps {
 }
 
 const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environments, onChange }) => {
+  const isMobile = useIsMobile();
   const set = (partial: Partial<PortfolioFilterState>) => onChange({ ...filters, ...partial });
 
   return (
@@ -35,7 +37,8 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
         display: 'flex',
         flexWrap: 'wrap',
         gap: 2,
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        flexDirection: isMobile ? 'column' : 'row',
         mb: 3,
         p: 2,
         borderRadius: 2,
@@ -48,7 +51,7 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
         placeholder="Search apps..."
         value={filters.search}
         onChange={(e) => set({ search: e.target.value })}
-        sx={{ minWidth: 220, flex: '1 1 220px', maxWidth: 360 }}
+        sx={{ minWidth: isMobile ? 0 : 220, flex: isMobile ? '1 1 auto' : '1 1 220px', maxWidth: isMobile ? '100%' : 360, width: isMobile ? '100%' : 'auto' }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -57,7 +60,7 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
           ),
         }}
       />
-      <FormControl size="small" sx={{ minWidth: 140 }}>
+      <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 140, width: isMobile ? '100%' : 'auto' }}>
         <InputLabel>Environment</InputLabel>
         <Select
           label="Environment"
@@ -70,7 +73,7 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
           ))}
         </Select>
       </FormControl>
-      <FormControl size="small" sx={{ minWidth: 120 }}>
+      <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 120, width: isMobile ? '100%' : 'auto' }}>
         <InputLabel>Status</InputLabel>
         <Select label="Status" value={filters.status} onChange={(e) => set({ status: e.target.value })}>
           <MenuItem value="all">All</MenuItem>
@@ -80,7 +83,7 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
           <MenuItem value="Starting">Starting</MenuItem>
         </Select>
       </FormControl>
-      <FormControl size="small" sx={{ minWidth: 140 }}>
+      <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 140, width: isMobile ? '100%' : 'auto' }}>
         <InputLabel>Sort by</InputLabel>
         <Select label="Sort by" value={filters.sort} onChange={(e) => set({ sort: e.target.value as SortOption })}>
           <MenuItem value="name-asc">Name A-Z</MenuItem>
@@ -88,7 +91,7 @@ const PortfolioFilters: React.FC<PortfolioFiltersProps> = ({ filters, environmen
           <MenuItem value="status">Status</MenuItem>
         </Select>
       </FormControl>
-      <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+      <Typography variant="caption" color="text.secondary" sx={{ ml: isMobile ? 0 : 'auto' }}>
         Showing frontend &amp; web apps only
       </Typography>
     </Box>

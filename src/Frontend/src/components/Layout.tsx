@@ -107,8 +107,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <MenuIcon />
           </IconButton>
           <AdminIcon sx={{ mr: 1, display: { xs: 'none', sm: 'block' }, opacity: 0.8 }} />
-          <Typography variant="h6" noWrap component="div">
-            {isPortalPage ? 'App Portfolio' : 'Kubernetes Control Panel'}
+          <Typography variant="h6" noWrap component="div" sx={{ fontSize: { xs: '0.95rem', sm: '1.25rem' } }}>
+            {isPortalPage ? 'App Portfolio' : 'K8s Control Panel'}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -134,8 +134,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          p: { xs: 1.5, sm: 2, md: 3 },
+          width: { xs: '100%', sm: `calc(100% - ${drawerWidth}px)` },
+          maxWidth: '100%',
+          overflowX: 'hidden',
           bgcolor: isPortalPage ? 'background.default' : undefined,
         }}
       >

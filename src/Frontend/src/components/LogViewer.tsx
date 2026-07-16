@@ -33,6 +33,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { podsApi } from '../services/api';
 import { PodInfo, ContainerInfo, LogViewerOptions } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface LogViewerProps {
   open: boolean;
@@ -42,6 +43,7 @@ interface LogViewerProps {
 }
 
 const LogViewer: React.FC<LogViewerProps> = ({ open, onClose, pod, initialOptions }) => {
+  const isMobile = useIsMobile();
   const [selectedContainer, setSelectedContainer] = useState<string>(
     initialOptions?.containerName || pod.containers[0]?.name || ''
   );
@@ -126,13 +128,14 @@ const LogViewer: React.FC<LogViewerProps> = ({ open, onClose, pod, initialOption
       onClose={onClose} 
       maxWidth="lg" 
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
-        sx: { height: '80vh' }
+        sx: { height: isMobile ? '100%' : '80vh' }
       }}
     >
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">
+      <DialogTitle sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1}>
+          <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ wordBreak: 'break-word' }}>
             Pod Logs - {pod.name}
           </Typography>
           <IconButton onClick={onClose} size="small">
@@ -142,10 +145,10 @@ const LogViewer: React.FC<LogViewerProps> = ({ open, onClose, pod, initialOption
       </DialogTitle>
 
       <DialogContent sx={{ p: 0 }}>
-        <Paper sx={{ m: 2, mb: 0 }}>
-          <Toolbar variant="dense">
-            <Box display="flex" gap={2} alignItems="center" flexWrap="wrap" width="100%">
-              <FormControl size="small" sx={{ minWidth: 120 }}>
+        <Paper sx={{ m: isMobile ? 1 : 2, mb: 0 }}>
+          <Toolbar variant="dense" sx={{ flexWrap: 'wrap', gap: 1, minHeight: 'auto', py: 1 }}>
+            <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap" width="100%">
+              <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 120, flex: isMobile ? '1 1 100%' : undefined, width: isMobile ? '100%' : 'auto' }}>
                 <InputLabel>Container</InputLabel>
                 <Select
                   value={selectedContainer}
@@ -217,11 +220,11 @@ const LogViewer: React.FC<LogViewerProps> = ({ open, onClose, pod, initialOption
                       </IconButton>
                     ),
                   }}
-                  sx={{ minWidth: 200 }}
+                  sx={{ minWidth: isMobile ? 0 : 200, flex: isMobile ? '1 1 100%' : undefined, width: isMobile ? '100%' : 'auto' }}
                 />
               </Box>
 
-              <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+              <Box sx={{ ml: isMobile ? 0 : 'auto', display: 'flex', gap: 1 }}>
                 <IconButton onClick={() => refetch()} size="small" title="Refresh">
                   <RefreshIcon />
                 </IconButton>
@@ -233,8 +236,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ open, onClose, pod, initialOption
           </Toolbar>
         </Paper>
 
-        <Box sx={{ mx: 2, mb: 2 }}>
-          <Box display="flex" gap={1} mb={1}>
+        <Box sx={{ mx: isMobile ? 1 : 2, mb: 2 }}>
+          <Box display="flex" gap={1} mb={1} flexWrap="wrap">
             <Chip 
               label={`Lines: ${logLines.length}`} 
               size="small" 
@@ -264,8 +267,8 @@ const LogViewer: React.FC<LogViewerProps> = ({ open, onClose, pod, initialOption
           <Paper 
             ref={logContentRef}
             sx={{ 
-              height: '50vh', 
-              overflow: 'auto', 
+              height: isMobile ? 'calc(100vh - 320px)' : '50vh', 
+              overflow: 'auto',
               backgroundColor: 'background.default',
               fontFamily: 'monospace',
               fontSize: '12px',

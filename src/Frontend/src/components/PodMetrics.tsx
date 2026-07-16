@@ -50,6 +50,7 @@ import {
 } from 'chart.js';
 import { podsApi } from '../services/api';
 import { PodInfo, PodMetrics, PodResourceUsage } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // Register Chart.js components
 ChartJS.register(
@@ -69,6 +70,7 @@ interface PodMetricsProps {
 }
 
 const PodMetricsComponent: React.FC<PodMetricsProps> = ({ open, onClose, pod }) => {
+  const isMobile = useIsMobile();
   const [historyHours, setHistoryHours] = useState(24);
 
   const { data: currentMetrics, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useQuery({
@@ -166,15 +168,16 @@ const PodMetricsComponent: React.FC<PodMetricsProps> = ({ open, onClose, pod }) 
       onClose={onClose} 
       maxWidth="lg" 
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
-        sx: { height: '90vh' }
+        sx: { height: isMobile ? '100%' : '90vh' }
       }}
     >
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" alignItems="center" gap={1}>
-            <TimelineIcon />
-            <Typography variant="h6">
+      <DialogTitle sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1}>
+          <Box display="flex" alignItems="flex-start" gap={1} minWidth={0}>
+            <TimelineIcon sx={{ mt: 0.25, flexShrink: 0 }} />
+            <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ wordBreak: 'break-word' }}>
               Pod Metrics - {pod.name}
             </Typography>
           </Box>

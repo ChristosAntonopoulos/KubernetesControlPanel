@@ -4,8 +4,11 @@ import {
   Alert,
   Box,
   Button,
+  Card,
+  CardContent,
   Chip,
   FormControl,
+  Grid,
   IconButton,
   InputLabel,
   LinearProgress,
@@ -13,6 +16,7 @@ import {
   Paper,
   Select,
   Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -20,7 +24,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Toolbar,
   Typography,
 } from '@mui/material';
 import {
@@ -31,8 +34,10 @@ import {
 import { deploymentsApi, namespacesApi } from '../services/api';
 import { DeploymentInfo } from '../types';
 import { SYSTEM_NAMESPACES } from '../constants';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const Deployments: React.FC = () => {
+  const isMobile = useIsMobile();
   const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [scaleInputs, setScaleInputs] = useState<Record<string, string>>({});
@@ -141,6 +146,52 @@ const Deployments: React.FC = () => {
     }
   };
 
+  const renderScaleControls = (deployment: DeploymentInfo, fullWidth = false) => (
+    <Box
+      display="flex"
+      alignItems="center"
+      justifyContent={fullWidth ? 'stretch' : 'center'}
+      gap={0.5}
+      flexWrap="wrap"
+      width={fullWidth ? '100%' : 'auto'}
+    >
+      <IconButton
+        size="small"
+        aria-label="decrease replicas"
+        onClick={() => adjustReplicas(deployment, -1)}
+        disabled={scaleMutation.isPending}
+      >
+        <RemoveIcon fontSize="small" />
+      </IconButton>
+      <TextField
+        size="small"
+        type="number"
+        inputProps={{ min: 0, style: { width: fullWidth ? undefined : 56, textAlign: 'center' } }}
+        value={getScaleValue(deployment)}
+        onChange={(e) => setScaleValue(deployment, e.target.value)}
+        disabled={scaleMutation.isPending}
+        sx={fullWidth ? { flex: 1, minWidth: 72 } : undefined}
+      />
+      <IconButton
+        size="small"
+        aria-label="increase replicas"
+        onClick={() => adjustReplicas(deployment, 1)}
+        disabled={scaleMutation.isPending}
+      >
+        <AddIcon fontSize="small" />
+      </IconButton>
+      <Button
+        size="small"
+        variant="outlined"
+        onClick={() => applyScale(deployment, parseInt(getScaleValue(deployment), 10))}
+        disabled={scaleMutation.isPending}
+        sx={fullWidth ? { flexShrink: 0 } : undefined}
+      >
+        Apply
+      </Button>
+    </Box>
+  );
+
   if (isLoading) {
     return (
       <Box sx={{ width: '100%' }}>
@@ -155,15 +206,37 @@ const Deployments: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Deployments
-      </Typography>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems={isMobile ? 'flex-start' : 'center'}
+        flexDirection={isMobile ? 'column' : 'row'}
+        gap={isMobile ? 1.5 : 0}
+        mb={1}
+      >
+        <Typography variant={isMobile ? 'h5' : 'h4'}>Deployments</Typography>
+        <Button
+          startIcon={<RefreshIcon />}
+          onClick={() => refetch()}
+          fullWidth={isMobile}
+          variant={isMobile ? 'outlined' : 'text'}
+        >
+          Refresh
+        </Button>
+      </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Scale replica counts up or down, including zero. Pods are recreated by the deployment controller when scaling up.
       </Typography>
 
-      <Toolbar sx={{ px: 0, gap: 2, flexWrap: 'wrap' }}>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+      <Box
+        display="flex"
+        gap={2}
+        flexWrap="wrap"
+        flexDirection={isMobile ? 'column' : 'row'}
+        alignItems={isMobile ? 'stretch' : 'center'}
+        mb={2}
+      >
+        <FormControl size="small" sx={{ minWidth: isMobile ? 0 : 180, width: isMobile ? '100%' : 'auto' }}>
           <InputLabel>Namespace</InputLabel>
           <Select
             value={selectedNamespace}
@@ -184,34 +257,79 @@ const Deployments: React.FC = () => {
           label="Search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: isMobile ? 0 : 200, width: isMobile ? '100%' : 'auto' }}
         />
-        <Button startIcon={<RefreshIcon />} onClick={() => refetch()}>
-          Refresh
-        </Button>
-      </Toolbar>
+      </Box>
 
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Namespace</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="center">Replicas</TableCell>
-              <TableCell align="center">Ready</TableCell>
-              <TableCell align="center">Scale</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredDeployments.length === 0 ? (
+      {filteredDeployments.length === 0 ? (
+        <Card>
+          <CardContent sx={{ py: 6, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              No deployments found
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : isMobile ? (
+        <Stack spacing={1.5}>
+          {filteredDeployments.map((deployment) => (
+            <Card key={`${deployment.namespace}/${deployment.name}`} variant="outlined">
+              <CardContent sx={{ pb: '12px !important' }}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  sx={{ wordBreak: 'break-word', lineHeight: 1.3, mb: 0.75 }}
+                >
+                  {deployment.name}
+                </Typography>
+                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
+                  <Chip label={deployment.namespace} size="small" variant="outlined" />
+                  <Chip
+                    label={deployment.status}
+                    size="small"
+                    color={getStatusColor(deployment.status)}
+                  />
+                </Stack>
+
+                <Grid container spacing={1.25} sx={{ mb: 1.5 }}>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Replicas
+                    </Typography>
+                    <Typography variant="body2">{deployment.replicas}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Ready
+                    </Typography>
+                    <Typography variant="body2">
+                      {deployment.readyReplicas}/{deployment.replicas}
+                    </Typography>
+                  </Grid>
+                </Grid>
+
+                <Typography variant="caption" color="text.secondary" display="block" mb={0.75}>
+                  Scale
+                </Typography>
+                {renderScaleControls(deployment, true)}
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={6} align="center">
-                  No deployments found
-                </TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Namespace</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="center">Replicas</TableCell>
+                <TableCell align="center">Ready</TableCell>
+                <TableCell align="center">Scale</TableCell>
               </TableRow>
-            ) : (
-              filteredDeployments.map((deployment) => (
+            </TableHead>
+            <TableBody>
+              {filteredDeployments.map((deployment) => (
                 <TableRow key={`${deployment.namespace}/${deployment.name}`} hover>
                   <TableCell>{deployment.name}</TableCell>
                   <TableCell>{deployment.namespace}</TableCell>
@@ -226,50 +344,13 @@ const Deployments: React.FC = () => {
                   <TableCell align="center">
                     {deployment.readyReplicas}/{deployment.replicas}
                   </TableCell>
-                  <TableCell align="center">
-                    <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
-                      <IconButton
-                        size="small"
-                        aria-label="decrease replicas"
-                        onClick={() => adjustReplicas(deployment, -1)}
-                        disabled={scaleMutation.isPending}
-                      >
-                        <RemoveIcon fontSize="small" />
-                      </IconButton>
-                      <TextField
-                        size="small"
-                        type="number"
-                        inputProps={{ min: 0, style: { width: 56, textAlign: 'center' } }}
-                        value={getScaleValue(deployment)}
-                        onChange={(e) => setScaleValue(deployment, e.target.value)}
-                        disabled={scaleMutation.isPending}
-                      />
-                      <IconButton
-                        size="small"
-                        aria-label="increase replicas"
-                        onClick={() => adjustReplicas(deployment, 1)}
-                        disabled={scaleMutation.isPending}
-                      >
-                        <AddIcon fontSize="small" />
-                      </IconButton>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() =>
-                          applyScale(deployment, parseInt(getScaleValue(deployment), 10))
-                        }
-                        disabled={scaleMutation.isPending}
-                      >
-                        Apply
-                      </Button>
-                    </Box>
-                  </TableCell>
+                  <TableCell align="center">{renderScaleControls(deployment)}</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Snackbar
         open={snackbar.open}
